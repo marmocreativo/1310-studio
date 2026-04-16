@@ -19,7 +19,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'Manuel',
             'lastname' => 'Marmolejo',
             'email' => 'marmocreativo@gmail.com',
+            'password' => 'Angeles1#',
             'role' => 'admin'
         ]);
+
+        $this->call(PaginasSeeder::class);
+        $this->call(CategoriasSeeder::class);
     }
 }
