@@ -151,7 +151,7 @@
                     <div class="pt-4 border-t border-outline-variant">
                         <p class="text-[11px] tracking-[0.2em] uppercase text-on-surface-variant mb-4">Detalles</p>
                         <div class="text-on-surface-variant font-light leading-relaxed text-sm">
-                            {!! nl2br(e($producto->detalles)) !!}
+                            {!! $producto->detalles !!}
                         </div>
                     </div>
                 @endif

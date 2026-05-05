@@ -40,7 +40,7 @@
 
                 @if ($taller->detalles)
                     <div class="text-on-surface-variant font-light leading-relaxed">
-                        {!! nl2br(e($taller->detalles)) !!}
+                        {!! $taller->detalles !!}
                     </div>
                 @endif
 

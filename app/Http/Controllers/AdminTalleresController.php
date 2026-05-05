@@ -12,10 +12,56 @@ use Illuminate\Support\Str;
 
 class AdminTalleresController extends Controller
 {
-    public function index()
+    
+    public function index(Request $request)
     {
-        $talleres = Taller::orderBy('fecha', 'desc')->paginate(20);
+        $query = Taller::query();
+
+        if ($request->filled('busqueda')) {
+            $query->where('nombre', 'like', '%' . $request->busqueda . '%');
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado === '1');
+        }
+
+        if ($request->filled('periodo')) {
+            match($request->periodo) {
+                'proximos' => $query->where('fecha', '>=', now()),
+                'pasados'  => $query->where('fecha', '<', now()),
+                'sin_fecha' => $query->whereNull('fecha'),
+                default    => null,
+            };
+        }
+
+        $talleres = $query->orderBy('fecha', 'desc')->paginate(20)->withQueryString();
+
         return view('pages.admin.talleres.index', compact('talleres'));
+    }
+
+    // agrega lote()
+    public function lote(Request $request)
+    {
+        $request->validate([
+            'ids'    => 'required|array',
+            'ids.*'  => 'exists:talleres,id',
+            'accion' => 'required|in:activar,desactivar,eliminar',
+        ]);
+
+        $talleres = Taller::whereIn('id', $request->ids);
+
+        if ($request->accion === 'eliminar') {
+            foreach ($talleres->get() as $taller) {
+                if ($taller->imagen) {
+                    Storage::disk('public')->delete($taller->imagen);
+                }
+                $taller->delete();
+            }
+        } else {
+            $talleres->update(['estado' => $request->accion === 'activar']);
+        }
+
+        return redirect()->back()->with('success', 'Acción aplicada correctamente.');
     }
 
     public function create()

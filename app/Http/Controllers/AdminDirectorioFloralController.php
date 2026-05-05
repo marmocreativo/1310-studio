@@ -13,10 +13,30 @@ use Illuminate\Support\Str;
 
 class AdminDirectorioFloralController extends Controller
 {
-    public function index()
+    // reemplaza index()
+    public function index(Request $request)
     {
-        $flores = DirectorioFloral::ordenados()->paginate(20);
-        return view('pages.admin.directorio-floral.index', compact('flores'));
+        $query = DirectorioFloral::ordenados();
+
+        if ($request->filled('busqueda')) {
+            $query->where('nombre', 'like', '%' . $request->busqueda . '%');
+        }
+
+        if ($request->filled('categoria')) {
+            $query->where('categoria', $request->categoria);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado === '1');
+        }
+
+        $flores     = $query->paginate(20)->withQueryString();
+        $categorias = DirectorioFloral::whereNotNull('categoria')
+                        ->distinct()
+                        ->orderBy('categoria')
+                        ->pluck('categoria');
+
+        return view('pages.admin.directorio-floral.index', compact('flores', 'categorias'));
     }
 
     public function create()
@@ -50,7 +70,7 @@ class AdminDirectorioFloralController extends Controller
 
     public function show(DirectorioFloral $directorioFloral)
     {
-        $directorioFloral->load('galeria');
+        $directorioFloral->load(['galeria', 'productos.galeria']);
         return view('pages.admin.directorio-floral.show', compact('directorioFloral'));
     }
 
@@ -124,7 +144,14 @@ class AdminDirectorioFloralController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Imágenes agregadas correctamente.');
+        return response()->json([
+            'ok'      => true,
+            'galeria' => $flor->galeria()->get()->map(fn($img) => [
+                'id'        => $img->id,
+                'url'       => Storage::url($img->imagen),
+                'deleteUrl' => route('admin.directorio-floral.galeria.destroy', [$flor, $img]),
+            ]),
+        ]);
     }
 
     public function galeriaDestroy(DirectorioFloral $flor, GaleriaFlor $imagen)
@@ -132,7 +159,7 @@ class AdminDirectorioFloralController extends Controller
         Storage::disk('public')->delete($imagen->imagen);
         $imagen->delete();
 
-        return back()->with('success', 'Imagen eliminada.');
+        return response()->json(['ok' => true]);
     }
 
     public function galeriaOrden(Request $request, DirectorioFloral $flor, GaleriaFlor $imagen)
@@ -173,5 +200,39 @@ class AdminDirectorioFloralController extends Controller
         $count = $query->count();
 
         return $count > 0 ? "{$original}-{$count}" : $slug;
+    }
+    // agrega lote()
+    public function lote(Request $request)
+    {
+        $request->validate([
+            'ids'       => 'required|array',
+            'ids.*'     => 'exists:directorio_floral,id',
+            'accion'    => 'required|in:activar,desactivar,categoria,eliminar',
+            'categoria' => 'nullable|string|max:255',
+        ]);
+
+        $flores = DirectorioFloral::whereIn('id', $request->ids);
+
+        match($request->accion) {
+            'activar'    => $flores->update(['estado' => true]),
+            'desactivar' => $flores->update(['estado' => false]),
+            'categoria'  => $flores->update(['categoria' => $request->categoria]),
+            'eliminar'   => $this->eliminarLote($flores->get()),
+        };
+
+        return redirect()->back()->with('success', 'Acción aplicada correctamente.');
+    }
+
+    private function eliminarLote($flores): void
+    {
+        foreach ($flores as $flor) {
+            if ($flor->imagen) {
+                Storage::disk('public')->delete($flor->imagen);
+            }
+            foreach ($flor->galeria as $img) {
+                Storage::disk('public')->delete($img->imagen);
+            }
+            $flor->delete();
+        }
     }
 }

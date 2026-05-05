@@ -27,16 +27,23 @@ Route::prefix('admin')
         Route::resource('categorias', AdminCategoriasController::class);
 
         // Directorio Floral + Galería
+        Route::post('directorio-floral/lote', [AdminDirectorioFloralController::class, 'lote'])->name('directorio-floral.lote');
+        Route::resource('directorio-floral', AdminDirectorioFloralController::class);
         Route::resource('directorio-floral', AdminDirectorioFloralController::class);
         Route::post('directorio-floral/{flor}/galeria', [AdminDirectorioFloralController::class, 'galeriaStore'])->name('directorio-floral.galeria.store');
         Route::delete('directorio-floral/{flor}/galeria/{imagen}', [AdminDirectorioFloralController::class, 'galeriaDestroy'])->name('directorio-floral.galeria.destroy');
         Route::patch('directorio-floral/{flor}/galeria/{imagen}/orden', [AdminDirectorioFloralController::class, 'galeriaOrden'])->name('directorio-floral.galeria.orden');
 
         // Talleres
+        
+        Route::post('talleres/lote', [AdminTalleresController::class, 'lote'])->name('talleres.lote');
         Route::resource('talleres', AdminTalleresController::class)
             ->parameters(['talleres' => 'taller']);
 
         // Productos + Galería + Relaciones
+        // Acciones en lote y toggle
+        Route::post('productos/lote', [AdminProductosController::class, 'lote'])->name('productos.lote');
+        Route::patch('productos/{producto}/toggle-destacado', [AdminProductosController::class, 'toggleDestacado'])->name('productos.toggle-destacado');
         Route::resource('productos', AdminProductosController::class);
         Route::post('productos/{producto}/galeria', [AdminProductosController::class, 'galeriaStore'])->name('productos.galeria.store');
         Route::delete('productos/{producto}/galeria/{imagen}', [AdminProductosController::class, 'galeriaDestroy'])->name('productos.galeria.destroy');
@@ -59,6 +66,7 @@ Route::get('/paginas/{slug}', [PaginasController::class, 'show'])->name('paginas
 Route::get('/categorias', [CategoriasController::class, 'index'])->name('categorias.index');
 Route::get('/categorias/{categoria:slug}', [CategoriasController::class, 'show'])->name('categorias.show');
 Route::get('/productos/{producto:slug}', [ProductosController::class, 'show'])->name('productos.show');
+
 
 // Directorio floral
 Route::get('/directorio-floral', [DirectorioFloralController::class, 'index'])->name('directorio-floral.index');

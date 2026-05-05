@@ -67,7 +67,7 @@
 
                 @if ($flor->contenido)
                     <div class="pt-4 border-t border-outline-variant text-on-surface-variant font-light leading-relaxed text-sm">
-                        {!! nl2br(e($flor->contenido)) !!}
+                        {!! $flor->contenido !!}
                     </div>
                 @endif
 

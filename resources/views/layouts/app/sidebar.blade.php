@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
+        @stack('styles')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
@@ -18,11 +19,13 @@
             </flux:sidebar.group>
 
             <flux:sidebar.group :heading="__('Contenido')" class="grid">
-                <flux:sidebar.item icon="document-text" :href="route('admin.paginas.index')" :current="request()->routeIs('admin.paginas.*')" wire:navigate>
-                    {{ __('Páginas') }}
-                </flux:sidebar.item>
+                
                 <flux:sidebar.item icon="tag" :href="route('admin.categorias.index')" :current="request()->routeIs('admin.categorias.*')" wire:navigate>
                     {{ __('Categorías') }}
+                </flux:sidebar.item>
+                
+                <flux:sidebar.item icon="shopping-bag" :href="route('admin.productos.index')" :current="request()->routeIs('admin.productos.*')" wire:navigate>
+                    {{ __('Productos') }}
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="book-open" :href="route('admin.directorio-floral.index')" :current="request()->routeIs('admin.directorio-floral.*')" wire:navigate>
                     {{ __('Directorio Floral') }}
@@ -30,8 +33,8 @@
                 <flux:sidebar.item icon="academic-cap" :href="route('admin.talleres.index')" :current="request()->routeIs('admin.talleres.*')" wire:navigate>
                     {{ __('Talleres') }}
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="shopping-bag" :href="route('admin.productos.index')" :current="request()->routeIs('admin.productos.*')" wire:navigate>
-                    {{ __('Productos') }}
+                <flux:sidebar.item icon="document-text" :href="route('admin.paginas.index')" :current="request()->routeIs('admin.paginas.*')" wire:navigate>
+                    {{ __('Páginas') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
         </flux:sidebar.nav>
@@ -39,12 +42,8 @@
             <flux:spacer />
 
             <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
-
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
+                <flux:sidebar.item icon="home" :href="route('home')" target="_blank">
+                    Ver sitio
                 </flux:sidebar.item>
             </flux:sidebar.nav>
 
@@ -114,6 +113,7 @@
             </flux:toast.group>
         @endpersist
 
+        @stack('scripts')
         @fluxScripts
     </body>
 </html>

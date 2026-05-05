@@ -1,14 +1,32 @@
 <x-layouts::app :title="__('Nueva categoría')">
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
+<div class="flex h-full w-full flex-1 flex-col gap-6">
 
-        <div class="flex items-center gap-4">
-            <flux:button href="{{ route('admin.categorias.index') }}" variant="ghost" icon="arrow-left" wire:navigate />
-            <flux:heading size="xl">Nueva categoría</flux:heading>
+    <x-admin.page-header
+        titulo="Nueva categoría"
+        :breadcrumbs="[
+            ['label' => 'Dashboard',  'route' => 'admin.dashboard'],
+            ['label' => 'Categorías', 'route' => 'admin.categorias.index'],
+            ['label' => 'Nueva categoría'],
+        ]"
+    />
+
+    @if($errors->any())
+        <div class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3">
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $error)
+                    <li><flux:text class="text-red-700 dark:text-red-400 text-sm">{{ $error }}</flux:text></li>
+                @endforeach
+            </ul>
         </div>
+    @endif
 
-        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6">
-            <form method="POST" action="{{ route('admin.categorias.store') }}" enctype="multipart/form-data" class="max-w-2xl space-y-6">
-                @csrf
+    <form method="POST" action="{{ route('admin.categorias.store') }}" enctype="multipart/form-data">
+        @csrf
+
+        <div class="flex gap-6 items-start">
+
+            {{-- Columna principal --}}
+            <div class="flex-1 space-y-5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6">
 
                 <flux:field>
                     <flux:label>Título</flux:label>
@@ -20,7 +38,7 @@
                     <flux:label>Categoría padre</flux:label>
                     <flux:select name="id_padre">
                         <flux:select.option value="">Sin categoría padre (raíz)</flux:select.option>
-                        @foreach ($padres as $padre)
+                        @foreach($padres as $padre)
                             <flux:select.option value="{{ $padre->id }}" :selected="old('id_padre') == $padre->id">
                                 {{ $padre->titulo }}
                             </flux:select.option>
@@ -31,33 +49,84 @@
 
                 <flux:field>
                     <flux:label>Resumen</flux:label>
-                    <flux:textarea name="resumen" rows="3">{{ old('resumen') }}</flux:textarea>
+                    <flux:textarea name="resumen" rows="4">{{ old('resumen') }}</flux:textarea>
                     <flux:error name="resumen" />
                 </flux:field>
 
-                <flux:field>
-                    <flux:label>Imagen</flux:label>
-                    <input type="file" name="imagen" accept="image/*"
-                        class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200" />
-                    <flux:description>Máximo 5MB. Se redimensionará a 1200px.</flux:description>
-                    <flux:error name="imagen" />
-                </flux:field>
-
-                <flux:field>
-                    <flux:label>Estado</flux:label>
-                    <flux:select name="estado">
-                        <flux:select.option value="borrador" :selected="old('estado', 'borrador') === 'borrador'">Borrador</flux:select.option>
-                        <flux:select.option value="publicado" :selected="old('estado') === 'publicado'">Publicado</flux:select.option>
-                    </flux:select>
-                    <flux:error name="estado" />
-                </flux:field>
-
-                <div class="flex gap-3">
-                    <flux:button type="submit" variant="primary">Crear categoría</flux:button>
-                    <flux:button href="{{ route('admin.categorias.index') }}" variant="ghost" wire:navigate>Cancelar</flux:button>
+                <div class="flex gap-3 pt-2">
+                    <button
+                        type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+                    >
+                        Crear categoría
+                    </button>
+                    <flux:button href="{{ route('admin.categorias.index') }}" variant="ghost" wire:navigate>
+                        Cancelar
+                    </flux:button>
                 </div>
-            </form>
-        </div>
+            </div>
 
-    </div>
+            {{-- Columna lateral --}}
+            <div class="w-72 shrink-0 space-y-4">
+
+                {{-- Publicación --}}
+                <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-4">
+                    <flux:heading size="sm">Publicación</flux:heading>
+                    <flux:field>
+                        <flux:label>Estado</flux:label>
+                        <flux:select name="estado">
+                            <flux:select.option value="borrador"  :selected="old('estado', 'borrador') === 'borrador'">Borrador</flux:select.option>
+                            <flux:select.option value="publicado" :selected="old('estado') === 'publicado'">Publicado</flux:select.option>
+                        </flux:select>
+                        <flux:error name="estado" />
+                    </flux:field>
+                </div>
+
+                {{-- Imagen --}}
+                <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
+                    <flux:heading size="sm">Imagen</flux:heading>
+
+                    <div id="preview-container" class="hidden">
+                        <img
+                            id="preview-img"
+                            src=""
+                            alt="Preview"
+                            class="w-full rounded-lg object-cover aspect-[4/3]"
+                        />
+                        <p id="preview-label" class="text-xs text-center text-primary mt-2"></p>
+                    </div>
+
+                    <input
+                        type="file"
+                        name="imagen"
+                        accept="image/*"
+                        class="block w-full text-sm text-zinc-500
+                               file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0
+                               file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700
+                               hover:file:bg-zinc-200 dark:file:bg-zinc-800 dark:file:text-zinc-300"
+                        onchange="
+                            const file = this.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = e => {
+                                    document.getElementById('preview-img').src = e.target.result;
+                                    document.getElementById('preview-label').textContent = file.name;
+                                    document.getElementById('preview-container').classList.remove('hidden');
+                                };
+                                reader.readAsDataURL(file);
+                            } else {
+                                document.getElementById('preview-container').classList.add('hidden');
+                            }
+                        "
+                    />
+
+                    <flux:description>Máx. 5 MB · Se redimensionará a 1200×900 px.</flux:description>
+                    <flux:error name="imagen" />
+                </div>
+
+            </div>
+        </div>
+    </form>
+
+</div>
 </x-layouts::app>

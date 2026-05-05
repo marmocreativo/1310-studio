@@ -104,7 +104,7 @@
 
             {{-- Capa 2: logo + textos centrados en columna --}}
                 <div class="absolute inset-0 flex flex-col items-center justify-center gap-8">
-                    <img src="{{ asset('images/logo.png') }}"
+                    <img src="{{ asset('images/logo_hero.png') }}"
                         alt="1310 Studio"
                         class="w-[15%] max-w-xl opacity-90 select-none pointer-events-none">
 

@@ -12,9 +12,24 @@ use Intervention\Image\Drivers\Gd\Driver;
 
 class AdminPaginasController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $paginas = Pagina::latest()->paginate(15);
+        $query = Pagina::query();
+
+        if ($request->filled('busqueda')) {
+            $query->where('titulo', 'like', '%' . $request->busqueda . '%');
+        }
+
+        if ($request->filled('categoria')) {
+            $query->where('categoria', $request->categoria);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $paginas = $query->latest()->paginate(15)->withQueryString();
+
         return view('pages.admin.paginas.index', compact('paginas'));
     }
 

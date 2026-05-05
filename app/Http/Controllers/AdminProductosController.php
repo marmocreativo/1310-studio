@@ -15,13 +15,31 @@ use Illuminate\Support\Str;
 
 class AdminProductosController extends Controller
 {
-    public function index()
-    {
-        $productos = Producto::with('categorias')
-                             ->orderBy('nombre')
-                             ->paginate(20);
 
-        return view('pages.admin.productos.index', compact('productos'));
+    public function index(Request $request)
+    {
+        $query = Producto::with(['categorias', 'galeria']);
+
+        if ($request->filled('busqueda')) {
+            $query->where('nombre', 'like', '%' . $request->busqueda . '%');
+        }
+
+        if ($request->filled('categoria')) {
+            $query->whereHas('categorias', fn($q) => $q->where('categorias.id', $request->categoria));
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado === 'activo');
+        }
+
+        if ($request->filled('destacado')) {
+            $query->where('destacado', true);
+        }
+
+        $productos  = $query->orderBy('nombre')->paginate(20)->withQueryString();
+        $categorias = Categoria::orderBy('titulo')->get();
+
+        return view('pages.admin.productos.index', compact('productos', 'categorias'));
     }
 
     public function create()
@@ -139,7 +157,16 @@ class AdminProductosController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Imágenes agregadas correctamente.');
+        return response()->json([
+            'ok'      => true,
+            'message' => 'Imágenes agregadas correctamente.',
+            'galeria' => $producto->galeria()->get()->map(fn($img) => [
+                'id'     => $img->id,
+                'url'    => Storage::url($img->imagen),
+                'orden'  => $img->orden,
+                'delete' => route('admin.productos.galeria.destroy', [$producto, $img]),
+            ]),
+        ]);
     }
 
     public function galeriaDestroy(Producto $producto, GaleriaProducto $imagen)
@@ -147,7 +174,7 @@ class AdminProductosController extends Controller
         Storage::disk('public')->delete($imagen->imagen);
         $imagen->delete();
 
-        return back()->with('success', 'Imagen eliminada.');
+        return response()->json(['ok' => true]);
     }
 
     public function galeriaOrden(Request $request, Producto $producto, GaleriaProducto $imagen)
@@ -182,6 +209,39 @@ class AdminProductosController extends Controller
         $producto->flores()->sync($request->flores ?? []);
 
         return back()->with('success', 'Flores actualizadas.');
+    }
+
+    public function toggleDestacado(Producto $producto)
+{
+    $producto->update(['destacado' => ! $producto->destacado]);
+
+    return response()->json([
+        'destacado' => $producto->destacado,
+    ]);
+}
+
+    public function lote(Request $request)
+    {
+        $request->validate([
+            'ids'        => 'required|array',
+            'ids.*'      => 'exists:productos,id',
+            'accion'     => 'required|in:activar,desactivar,destacar,no-destacar,categoria',
+            'id_categoria' => 'nullable|exists:categorias,id',
+        ]);
+
+        $productos = Producto::whereIn('id', $request->ids);
+
+        match($request->accion) {
+            'activar'      => $productos->update(['estado' => true]),
+            'desactivar'   => $productos->update(['estado' => false]),
+            'destacar'     => $productos->update(['destacado' => true]),
+            'no-destacar'  => $productos->update(['destacado' => false]),
+            'categoria'    => $productos->get()->each(
+                fn($p) => $p->categorias()->syncWithoutDetaching([$request->id_categoria])
+            ),
+        };
+
+        return redirect()->back()->with('success', 'Acción aplicada correctamente.');
     }
 
     private function procesarImagen($file, string $carpeta): string

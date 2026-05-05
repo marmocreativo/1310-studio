@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Categoria;
+use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -14,7 +15,7 @@ class AdminCategoriasController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Categoria::with('padre');
+        $query = Categoria::with('padre')->withCount('productos');
 
         if ($request->filled('padre')) {
             $query->where('id_padre', $request->padre);
@@ -60,8 +61,13 @@ class AdminCategoriasController extends Controller
 
     public function show(Categoria $categoria)
     {
-        // Por el momento vacío — aquí irán los productos
-        return view('pages.admin.categorias.show', compact('categoria'));
+        $productos = $categoria->productos()
+            ->with('galeria')
+            ->withCount('categorias')
+            ->orderBy('nombre')
+            ->paginate(15);
+
+        return view('pages.admin.categorias.show', compact('categoria', 'productos'));
     }
 
     public function edit(Categoria $categoria)
@@ -77,6 +83,7 @@ class AdminCategoriasController extends Controller
 
     public function update(Request $request, Categoria $categoria)
     {
+
         $validated = $request->validate([
             'titulo'   => 'required|string|max:255',
             'resumen'  => 'nullable|string',
@@ -120,7 +127,7 @@ class AdminCategoriasController extends Controller
     private function generarSlug(string $slug, ?int $excludeId = null): string
     {
         $original = $slug;
-        $query    = Producto::where('slug', 'like', "{$slug}%");
+        $query = Categoria::where('slug', 'like', "{$slug}%");
 
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
@@ -136,11 +143,7 @@ class AdminCategoriasController extends Controller
         $manager = new ImageManager(new Driver());
         $image = $manager->decode($file);
 
-        if ($image->width() > $image->height()) {
-            $image->scaleDown(width: 1200);
-        } else {
-            $image->scaleDown(height: 1200);
-        }
+        $image->cover(1200, 900);
 
         $filename = 'categorias/' . Str::uuid() . '.webp';
         $encoded = $image->encode(new \Intervention\Image\Encoders\WebpEncoder(quality: 85));
