@@ -1,126 +1,238 @@
 <x-layouts::public :title="__('Inicio')">
 
-    {{-- HERO --}}
-    <section class="relative bg-zinc-900 text-white overflow-hidden" style="min-height: 90vh;">
-        <img src="https://placehold.co/1600x900/1a1a1a/ffffff?text=Flores+de+Temporada"
-             alt="Hero"
-             class="absolute inset-0 w-full h-full object-cover opacity-40">
-        <div class="relative z-10 flex flex-col items-center justify-center text-center h-full px-6"
-             style="min-height: 90vh;">
-            <p class="text-sm uppercase tracking-widest text-zinc-300 mb-4">Estudio floral en Ciudad de México</p>
-            <h1 class="text-5xl md:text-7xl font-light leading-tight mb-6">
-                Flores que<br><span class="italic">cuentan historias</span>
-            </h1>
-            <p class="text-lg text-zinc-300 max-w-xl mb-10">
-                Diseños únicos para momentos únicos. Desde ramos artesanales hasta instalaciones para eventos.
+    {{-- ═══════════════════════════════════════════
+         HERO — Full screen editorial
+    ════════════════════════════════════════════ --}}
+    <section class="relative h-screen w-full overflow-hidden flex items-center justify-center">
+
+        {{-- Imagen de fondo --}}
+        <div class="absolute inset-0 z-0 bg-stone-200">
+            <img src="https://placehold.co/1600x900/2a2420/ffffff?text=1310+Studio"
+                 alt="Hero floral"
+                 class="w-full h-full object-cover opacity-90 scale-105">
+            <div class="absolute inset-0 bg-black/20"></div>
+        </div>
+
+        {{-- Contenido central --}}
+        <div class="relative z-10 text-center space-y-8 max-w-4xl px-4 flex flex-col items-center">
+            <p class="font-body text-white/90 text-2xl tracking-widest uppercase font-light"
+               style="text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                ELEGANCIA EN ESTADO NATURAL
             </p>
-            <div class="flex flex-wrap gap-4 justify-center">
-                <flux:button href="{{ route('categorias.index') }}" variant="primary" wire:navigate>
-                    Ver colección
-                </flux:button>
-                <flux:button href="{{ route('estudio') }}" variant="ghost" wire:navigate
-                    class="text-white border-white hover:bg-white/10">
-                    Nuestro estudio
-                </flux:button>
+            <h1 class="font-serif font-light italic text-white drop-shadow-md"
+                style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                Luxury Flower Lab
+            </h1>
+            <div class="pt-4">
+                <a href="{{ route('categorias.index') }}" wire:navigate
+                   class="inline-block bg-primary text-on-primary px-12 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-700">
+                    Ramos y arreglos
+                </a>
             </div>
+        </div>
+
+        {{-- Scroll indicator --}}
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 text-white/80">
+            <span class="text-[10px] tracking-[0.2em] uppercase font-light">Scroll</span>
+            <div class="w-px h-12 bg-white/40 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1/2 bg-white animate-bounce"></div>
+            </div>
+        </div>
+
+    </section>
+
+
+    {{-- ═══════════════════════════════════════════
+         SECCIÓN ASIMÉTRICA — Editorial copy
+    ════════════════════════════════════════════ --}}
+    <section class="py-32 px-8 max-w-[1440px] mx-auto">
+        <div class="flex flex-col md:flex-row gap-20 items-center">
+
+            {{-- Imagen --}}
+            <div class="w-full md:w-1/2 relative">
+                <div class="aspect-[3/4] bg-stone-100 overflow-hidden">
+                    <img src="https://placehold.co/600x800/e8e0d8/5a4a3a?text=Arreglo+floral"
+                         alt="Arreglo floral editorial"
+                         class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
+                </div>
+            </div>
+
+            {{-- Copy --}}
+            <div class="w-full md:w-1/2 space-y-10">
+                <h2 class="font-serif text-5xl text-on-surface leading-tight">
+                    La sutileza de lo efímero.
+                </h2>
+                <p class="text-on-surface-variant leading-relaxed max-w-md font-light">
+                    Nuestras piezas no son solo ramos; son esculturas temporales diseñadas
+                    para habitar espacios con intención. Cada flor es seleccionada por su
+                    arquitectura y longevidad.
+                </p>
+                <div class="pt-4">
+                    <a href="{{ route('categorias.index') }}" wire:navigate
+                       class="text-on-surface border-b border-outline pb-1 text-xs tracking-widest uppercase hover:border-on-surface transition-all duration-300">
+                        DIRECTORIO FLORAL
+                    </a>
+                </div>
+            </div>
+
         </div>
     </section>
 
-    {{-- CARRUSEL DE PRODUCTOS --}}
-    <section class="py-20 bg-white dark:bg-zinc-900">
-        <flux:container>
-            <div class="text-center mb-12">
-                <flux:heading size="xl" level="2">Productos destacados</flux:heading>
-                <flux:text class="mt-3 text-zinc-500">Una selección de nuestros arreglos más populares</flux:text>
-            </div>
 
-            <div x-data="{ active: 0, items: 4 }" class="relative overflow-hidden">
-                <div class="flex gap-6 transition-transform duration-500"
-                     :style="`transform: translateX(calc(-${active * (100 / 3)}% - ${active * 8}px))`">
-                    @foreach ([
-                        ['Ramo Primaveral', '1200x900/f9a8d4/831843'],
-                        ['Orquídea Blanca', '1200x900/e0f2fe/0c4a6e'],
-                        ['Ramo Silvestre', '1200x900/dcfce7/14532d'],
-                        ['Girasoles', '1200x900/fef9c3/713f12'],
-                        ['Rosas Rojas', '1200x900/fee2e2/7f1d1d'],
-                        ['Tulipanes', '1200x900/ede9fe/4c1d95'],
-                    ] as $producto)
-                        <div class="min-w-[calc(33.333%-1rem)] md:min-w-[calc(33.333%-1rem)] min-w-[85%] flex-shrink-0">
-                            <div class="rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 group">
-                                <div class="overflow-hidden">
-                                    <img src="https://placehold.co/{{ $producto[1] }}?text={{ urlencode($producto[0]) }}"
-                                         alt="{{ $producto[0] }}"
-                                         class="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500">
-                                </div>
-                                <div class="p-5">
-                                    <flux:heading level="3">{{ $producto[0] }}</flux:heading>
-                                    <flux:text class="mt-1 text-zinc-500">Desde $350 MXN</flux:text>
-                                    <flux:button class="mt-4 w-full" variant="ghost" size="sm">
-                                        Ver detalle
-                                    </flux:button>
-                                </div>
+    {{-- ═══════════════════════════════════════════
+         CARRUSEL — Colección (CSS infinite scroll)
+    ════════════════════════════════════════════ --}}
+    <section class="py-24 bg-surface-container-low overflow-hidden">
+
+        <div class="px-8 max-w-[1440px] mx-auto mb-16 text-center">
+            <h2 class="font-serif text-5xl text-on-surface leading-tight">Colección 1310</h2>
+            <p class="text-[11px] text-on-surface-variant uppercase tracking-[0.2em] mt-2">
+                Piezas icónicas de nuestro atelier
+            </p>
+        </div>
+
+        <div class="w-full overflow-hidden">
+            <div class="flex gap-12 px-8 w-max"
+                 style="animation: scroll-carousel 40s linear infinite;"
+                 x-data
+                 @mouseenter="$el.style.animationPlayState='paused'"
+                 @mouseleave="$el.style.animationPlayState='running'">
+
+                @php
+                $coleccion = [
+                    ['Ivory Form',         'ede8e0/7a6a58', 'Minimalismo en estado puro sobre formas orgánicas.'],
+                    ['Lila Whisper',       'e8e0f0/5a4a7a', 'Un susurro de elegancia en tonos lavanda y lila.'],
+                    ['Tulip Line',         'f0e8e0/7a5a4a', 'La danza de los tulipanes en diseño arquitectónico.'],
+                    ['Golden Silhouette',  'f0ece0/7a6a3a', 'Escultura floral que captura la luz del atardecer.'],
+                    ['Orchid Veil',        'e8f0ec/3a6a5a', 'La pureza de la orquídea en un velo de sofisticación.'],
+                    ['Magenta Bloom',      'f0e0e8/7a3a5a', 'Intensidad cromática y texturas profundas.'],
+                ];
+                @endphp
+
+                @foreach (array_merge($coleccion, $coleccion) as $i => $pieza)
+                    <div class="group cursor-pointer flex-shrink-0" style="width: 300px;">
+                        <div class="overflow-hidden bg-white relative" style="aspect-ratio: 3/4;">
+                            <img src="https://placehold.co/600x800/{{ $pieza[1] }}?text={{ urlencode($pieza[0]) }}"
+                                 alt="{{ $pieza[0] }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000">
+                            {{-- Overlay hover --}}
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center p-6 text-center">
+                                <p class="text-white font-light text-sm tracking-wide leading-relaxed">
+                                    {{ $pieza[2] }}
+                                </p>
                             </div>
                         </div>
-                    @endforeach
-                </div>
+                        <div class="mt-6 text-center">
+                            <h3 class="font-serif text-lg text-on-surface italic">{{ $pieza[0] }}</h3>
+                            <div class="mt-2 w-8 h-px bg-outline-variant mx-auto"></div>
+                        </div>
+                    </div>
+                @endforeach
 
-                {{-- Controles --}}
-                <div class="flex justify-center gap-3 mt-8">
-                    <flux:button icon="arrow-left" variant="ghost" size="sm"
-                        x-on:click="active = active > 0 ? active - 1 : 0" />
-                    <flux:button icon="arrow-right" variant="ghost" size="sm"
-                        x-on:click="active = active < 3 ? active + 1 : 3" />
-                </div>
             </div>
-        </flux:container>
+        </div>
+
     </section>
 
-    {{-- MINI GRID DE CATEGORÍAS --}}
-    <section class="py-20 bg-zinc-50 dark:bg-zinc-800">
-        <flux:container>
-            <div class="text-center mb-12">
-                <flux:heading size="xl" level="2">Explora por categoría</flux:heading>
-                <flux:text class="mt-3 text-zinc-500">Encuentra el arreglo perfecto para cada ocasión</flux:text>
+
+    {{-- ═══════════════════════════════════════════
+         GRID VISUAL — Categorías estilo Instagram
+    ════════════════════════════════════════════ --}}
+    <section class="py-32 bg-surface">
+        <div class="px-8 max-w-[1440px] mx-auto">
+
+            <div class="mb-20 space-y-4">
+                <h2 class="font-serif text-5xl text-on-surface leading-tight">Explora</h2>
+                <p class="text-[11px] text-on-surface-variant uppercase tracking-[0.2em]">
+                    Encuentra el arreglo perfecto para cada ocasión
+                </p>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @foreach ([
-                    ['Ramos', 'f9a8d4/831843', 'ramos'],
-                    ['Orquídeas', 'e0f2fe/0c4a6e', 'orquideas'],
-                    ['Eventos', 'dcfce7/14532d', 'eventos'],
-                    ['Plantas', 'fef9c3/713f12', 'plantas'],
+                    ['Ramos',      'f0e8e4/8a5a4a'],
+                    ['Orquídeas',  'e4eef0/3a6a7a'],
+                    ['Eventos',    'e8f0e4/4a6a3a'],
+                    ['Plantas',    'f0ece4/6a5a3a'],
+                    ['Bouquets',   'f0e4ec/7a3a6a'],
+                    ['Silvestres', 'eef0e4/5a6a3a'],
+                    ['Corporativo','e4e8f0/3a4a7a'],
+                    ['Suscripción','f0eae4/7a5a3a'],
                 ] as $cat)
-                    <a href="{{ route('categorias.index') }}"
-                       class="group relative rounded-2xl overflow-hidden aspect-square">
+                    <a href="{{ route('categorias.index') }}" wire:navigate
+                       class="relative aspect-square overflow-hidden bg-stone-100 group block">
                         <img src="https://placehold.co/600x600/{{ $cat[1] }}?text={{ urlencode($cat[0]) }}"
                              alt="{{ $cat[0] }}"
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-black/30 flex items-end p-5">
-                            <flux:heading level="3" class="text-white">{{ $cat[0] }}</flux:heading>
+                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                            <span class="text-white text-xs tracking-[0.15em] uppercase font-light">
+                                {{ $cat[0] }}
+                            </span>
                         </div>
                     </a>
                 @endforeach
             </div>
-        </flux:container>
+
+        </div>
     </section>
 
-    {{-- CTA FINAL --}}
-    <section class="py-20 bg-white dark:bg-zinc-900 text-center">
-        <flux:container>
-            <flux:heading size="xl" level="2" class="mb-4">¿Tienes un evento especial?</flux:heading>
-            <flux:text class="text-zinc-500 max-w-xl mx-auto mb-8">
-                Visita nuestro estudio o contáctanos. Creamos propuestas personalizadas para bodas,
-                corporativos y cualquier celebración.
-            </flux:text>
-            <div class="flex flex-wrap gap-4 justify-center">
-                <flux:button href="{{ route('estudio') }}" variant="primary" wire:navigate>
-                    Visitar estudio
-                </flux:button>
-                <flux:button href="{{ route('empresas') }}" variant="ghost" wire:navigate>
-                    Soluciones empresariales
-                </flux:button>
+
+    {{-- ═══════════════════════════════════════════
+         CTA DUAL — Asesoría + Newsletter
+    ════════════════════════════════════════════ --}}
+    <section class="py-24 bg-surface-container-low border-y border-outline-variant">
+        <div class="max-w-[1440px] mx-auto px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24">
+
+                {{-- Asesoría personalizada --}}
+                <div class="text-center space-y-6 flex flex-col items-center">
+                    <flux:icon name="building-storefront" class="w-10 h-10 text-on-surface" />
+                    <h2 class="font-serif text-4xl text-on-surface leading-tight">
+                        Asesoría personalizada
+                    </h2>
+                    <p class="text-on-surface-variant leading-relaxed font-light max-w-md">
+                        Si buscas opciones personalizadas de ramos o arreglos para eventos especiales,
+                        ponte en contacto con nuestra tienda física.
+                    </p>
+                </div>
+
+                {{-- Newsletter --}}
+                <div class="text-center space-y-6 flex flex-col items-center">
+                    <flux:icon name="envelope" class="w-10 h-10 text-on-surface" />
+                    <h2 class="font-serif text-4xl text-on-surface leading-tight">
+                        Únete al atelier
+                    </h2>
+                    <p class="text-on-surface-variant leading-relaxed font-light max-w-md">
+                        Recibe inspiraciones sobre nuestro arte floral, lanzamientos exclusivos
+                        y consejos para el cuidado de tus arreglos.
+                    </p>
+                    <form class="flex flex-col sm:flex-row gap-4 pt-4 w-full max-w-md"
+                          x-data="{ email: '' }" @submit.prevent>
+                        <input
+                            type="email"
+                            x-model="email"
+                            placeholder="Tu correo electrónico"
+                            class="flex-1 bg-white border border-outline-variant px-6 py-4 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-outline">
+                        <button type="submit"
+                                class="bg-on-surface text-surface px-8 py-4 text-xs tracking-[0.2em] uppercase hover:opacity-80 transition-colors duration-300 whitespace-nowrap">
+                            SUSCRIBIRSE
+                        </button>
+                    </form>
+                </div>
+
             </div>
-        </flux:container>
+        </div>
     </section>
+
 
 </x-layouts::public>
+
+{{-- CSS animación carrusel --}}
+@push('styles')
+<style>
+    @keyframes scroll-carousel {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(calc(-300px * 6 - 3rem * 6)); }
+    }
+</style>
+@endpush

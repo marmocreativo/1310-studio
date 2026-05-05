@@ -25,5 +25,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call(PaginasSeeder::class);
         $this->call(CategoriasSeeder::class);
+        $this->call(DirectorioFloralSeeder::class);
+        $this->call(ProductosSeeder::class);
+        
     }
 }

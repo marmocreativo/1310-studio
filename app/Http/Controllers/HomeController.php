@@ -11,13 +11,13 @@ class HomeController extends Controller
         return view('pages.public.home');
     }
 
-    public function estudio()
-    {
-        return view('pages.public.estudio');
-    }
-
     public function empresas()
     {
         return view('pages.public.empresas');
+    }
+
+    public function visitanos()
+    {
+        return view('pages.public.visitanos');
     }
 }

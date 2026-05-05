@@ -24,6 +24,15 @@
                 <flux:sidebar.item icon="tag" :href="route('admin.categorias.index')" :current="request()->routeIs('admin.categorias.*')" wire:navigate>
                     {{ __('Categorías') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="book-open" :href="route('admin.directorio-floral.index')" :current="request()->routeIs('admin.directorio-floral.*')" wire:navigate>
+                    {{ __('Directorio Floral') }}
+                </flux:sidebar.item>
+                <flux:sidebar.item icon="academic-cap" :href="route('admin.talleres.index')" :current="request()->routeIs('admin.talleres.*')" wire:navigate>
+                    {{ __('Talleres') }}
+                </flux:sidebar.item>
+                <flux:sidebar.item icon="shopping-bag" :href="route('admin.productos.index')" :current="request()->routeIs('admin.productos.*')" wire:navigate>
+                    {{ __('Productos') }}
+                </flux:sidebar.item>
             </flux:sidebar.group>
         </flux:sidebar.nav>
 

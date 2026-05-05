@@ -119,7 +119,8 @@ class AdminCategoriasController extends Controller
 
     private function generarSlug(string $slug, ?int $excludeId = null): string
     {
-        $query = Categoria::where('slug', 'like', "{$slug}%");
+        $original = $slug;
+        $query    = Producto::where('slug', 'like', "{$slug}%");
 
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
@@ -127,7 +128,7 @@ class AdminCategoriasController extends Controller
 
         $count = $query->count();
 
-        return $count > 0 ? "{$slug}-{$count}" : $slug;
+        return $count > 0 ? "{$original}-{$count}" : $slug;
     }
 
     private function procesarImagen($file): string

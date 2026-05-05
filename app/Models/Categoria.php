@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Categoria extends Model
@@ -27,6 +28,16 @@ class Categoria extends Model
         return $this->hasMany(Categoria::class, 'id_padre');
     }
 
+    public function productos(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Producto::class,
+            'productos_categorias',
+            'id_categoria',
+            'id_producto'
+        );
+    }
+
     public function getImagenUrlAttribute(): string
     {
         if ($this->imagen && \Storage::disk('public')->exists($this->imagen)) {
@@ -45,5 +56,10 @@ class Categoria extends Model
     public function scopeRaiz($query)
     {
         return $query->whereNull('id_padre');
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 }
