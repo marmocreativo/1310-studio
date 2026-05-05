@@ -175,7 +175,7 @@
             {{-- Imagen --}}
             <div class="w-full md:w-1/2 relative">
                 <div class="aspect-[3/4] bg-stone-100 overflow-hidden">
-                    <img src="/images/arreglo_floral.jpg"
+                    <img src="{{ asset('images/arreglo_floral.jpg') }}"
                          alt="Arreglo floral editorial"
                          class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
                 </div>

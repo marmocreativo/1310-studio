@@ -11,7 +11,7 @@
         <div id="page-loader"
              class="fixed inset-0 z-[200] bg-surface flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
             <div class="flex flex-col items-center gap-4">
-                <img src="/images/logo_menu.png" class="h-10 w-auto animate-pulse">
+                <img src="{{ asset('images/logo_menu.png') }}" class="h-10 w-auto animate-pulse">
                 <div class="w-32 h-px bg-outline-variant overflow-hidden relative">
                     <div class="absolute inset-y-0 left-0 bg-primary animate-[loader_1.2s_ease-in-out_infinite]"></div>
                 </div>
@@ -34,7 +34,7 @@
             {{-- Header del offcanvas --}}
             <div class="flex items-center justify-between px-8 py-6 border-b border-outline-variant">
                 <a href="{{ route('home') }}" wire:navigate onclick="closeAll()">
-                    <img src="/images/logo_menu.png" class="h-8 w-auto">
+                    <img src="{{ asset('images/logo_menu.png') }}" class="h-8 w-auto">
                 </a>
                 <button onclick="closeAll()" class="text-on-surface-variant hover:text-on-surface transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -169,7 +169,7 @@
                 {{-- CENTRO — Logo --}}
                 <div class="flex-shrink-0">
                     <a href="{{ route('home') }}" wire:navigate>
-                        <img src="/images/logo_menu.png" class="max-h-[50px] w-auto">
+                        <img src="{{ asset('images/logo_menu.png') }}" class="max-h-[50px] w-auto">
                     </a>
                 </div>
 

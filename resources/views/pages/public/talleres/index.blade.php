@@ -71,7 +71,7 @@
                                     {{-- Imagen --}}
                                     <div class="w-24 h-24 md:w-28 md:h-28 shrink-0 overflow-hidden bg-stone-100">
                                         @if($taller->imagen)
-                                            <img src="{{ Storage::url($taller->imagen) }}"
+                                            <img src="{{Storage::disk('public')->url($taller->imagen) }}"
                                                  alt="{{ $taller->nombre }}"
                                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                         @else
@@ -125,7 +125,7 @@
                         <a href="{{ route('talleres.show', $taller->slug) }}"
                            class="group block relative aspect-square overflow-hidden bg-stone-100 grayscale hover:grayscale-0 transition-all duration-500">
                             @if($taller->imagen)
-                                <img src="{{ Storage::url($taller->imagen) }}"
+                                <img src="{{Storage::disk('public')->url($taller->imagen) }}"
                                      alt="{{ $taller->nombre }}"
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                             @else

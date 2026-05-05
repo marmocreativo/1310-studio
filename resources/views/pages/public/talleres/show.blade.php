@@ -15,7 +15,7 @@
             <div>
                 @if ($taller->imagen)
                     <div class="aspect-[4/3] overflow-hidden bg-surface-container-low">
-                        <img src="{{ Storage::url($taller->imagen) }}"
+                        <img src="{{Storage::disk('public')->url($taller->imagen) }}"
                              alt="{{ $taller->nombre }}"
                              class="w-full h-full object-cover">
                     </div>

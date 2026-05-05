@@ -44,11 +44,11 @@
 
                     {{-- Imagen --}}
                     @if ($flor->galeria->first())
-                        <img src="{{ Storage::url($flor->galeria->first()->imagen) }}"
+                        <img src="{{ Storage::disk('public')->url($flor->galeria->first()->imagen) }}"
                              alt="{{ $flor->nombre }}"
                              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     @elseif ($flor->imagen)
-                        <img src="{{ Storage::url($flor->imagen) }}"
+                        <img src="{{ Storage::disk('public')->url($flor->imagen) }}"
                              alt="{{ $flor->nombre }}"
                              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     @else

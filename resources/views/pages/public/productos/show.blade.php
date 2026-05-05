@@ -36,7 +36,7 @@
                 <div class="aspect-square overflow-hidden bg-surface-container-low mb-4 relative group cursor-zoom-in"
                      @click="lightbox = true">
                     @foreach ($producto->galeria as $i => $img)
-                        <img src="{{ Storage::url($img->imagen) }}"
+                        <img src="{{Storage::disk('public')->url($img->imagen) }}"
                              alt="{{ $producto->nombre }}"
                              x-show="activa === {{ $i }}"
                              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
@@ -62,7 +62,7 @@
                             <button @click="activa = {{ $i }}"
                                     class="flex-shrink-0 w-20 h-20 overflow-hidden border-2 transition-colors duration-200"
                                     :class="activa === {{ $i }} ? 'border-primary' : 'border-transparent hover:border-outline-variant'">
-                                <img src="{{ Storage::url($img->imagen) }}"
+                                <img src="{{Storage::disk('public')->url($img->imagen) }}"
                                      alt="{{ $producto->nombre }}"
                                      class="w-full h-full object-cover">
                             </button>
@@ -188,7 +188,7 @@
                      :class="zoom ? 'cursor-zoom-out' : 'cursor-zoom-in'"
                      @click="zoom = !zoom">
                     @foreach ($producto->galeria as $i => $img)
-                        <img src="{{ Storage::url($img->imagen) }}"
+                        <img src="{{Storage::disk('public')->url($img->imagen) }}"
                              alt="{{ $producto->nombre }}"
                              x-show="activa === {{ $i }}"
                              :class="zoom ? 'scale-[2]' : 'scale-100'"
@@ -224,7 +224,7 @@
                         <a href="{{ route('productos.show', $rel->slug) }}" class="group block">
                             <div class="aspect-square overflow-hidden bg-surface-container-low mb-3">
                                 @if ($portada)
-                                    <img src="{{ Storage::url($portada->imagen) }}"
+                                    <img src="{{Storage::disk('public')->url($portada->imagen) }}"
                                          alt="{{ $rel->nombre }}"
                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 @endif

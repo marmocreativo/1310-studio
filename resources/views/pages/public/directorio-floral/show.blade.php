@@ -17,13 +17,13 @@
                 <div class="aspect-square overflow-hidden bg-surface-container-low mb-4">
                     @if ($flor->galeria->count())
                         @foreach ($flor->galeria as $i => $img)
-                            <img src="{{ Storage::url($img->imagen) }}"
+                            <img src="{{Storage::disk('public')->url($img->imagen) }}"
                                  alt="{{ $flor->nombre }}"
                                  x-show="activa === {{ $i }}"
                                  class="w-full h-full object-cover">
                         @endforeach
                     @elseif ($flor->imagen)
-                        <img src="{{ Storage::url($flor->imagen) }}"
+                        <img src="{{Storage::disk('public')->url($flor->imagen) }}"
                              alt="{{ $flor->nombre }}"
                              class="w-full h-full object-cover">
                     @else
@@ -39,7 +39,7 @@
                             <button @click="activa = {{ $i }}"
                                     class="flex-shrink-0 w-20 h-20 overflow-hidden border-2 transition-colors duration-200"
                                     :class="activa === {{ $i }} ? 'border-primary' : 'border-transparent'">
-                                <img src="{{ Storage::url($img->imagen) }}"
+                                <img src="{{Storage::disk('public')->url($img->imagen) }}"
                                      alt="{{ $flor->nombre }}"
                                      class="w-full h-full object-cover">
                             </button>
@@ -84,7 +84,7 @@
                                     @php $portada = $producto->galeria->first(); @endphp
                                     <div class="w-14 h-14 overflow-hidden bg-surface-container-low flex-shrink-0">
                                         @if ($portada)
-                                            <img src="{{ Storage::url($portada->imagen) }}"
+                                            <img src="{{Storage::disk('public')->url($portada->imagen) }}"
                                                  alt="{{ $producto->nombre }}"
                                                  class="w-full h-full object-cover">
                                         @endif
@@ -117,7 +117,7 @@
                         <a href="{{ route('directorio-floral.show', $rel->slug) }}" class="group block">
                             <div class="aspect-square overflow-hidden bg-surface-container-low mb-3">
                                 @if ($rel->imagen)
-                                    <img src="{{ Storage::url($rel->imagen) }}"
+                                    <img src="{{Storage::disk('public')->url($rel->imagen) }}"
                                          alt="{{ $rel->nombre }}"
                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 @endif

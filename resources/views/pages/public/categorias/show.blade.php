@@ -53,7 +53,7 @@
                        class="group block">
                         <div class="aspect-[3/4] overflow-hidden bg-surface-container-low mb-4">
                             @if ($portada)
-                                <img src="{{ Storage::url($portada->imagen) }}"
+                                <img src="{{ Storage::disk('public')->url($portada->imagen) }}"
                                      alt="{{ $producto->nombre }}"
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                             @else
