@@ -62,11 +62,11 @@
                                 </div>
                             @endif
                         </div>
-                        <div class="space-y-1">
+                        <div class="space-y-1 text-center">
                             <h3 class="font-serif text-on-surface group-hover:text-primary transition-colors duration-300">
                                 {{ $producto->nombre }}
                             </h3>
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-3 justify-center">
                                 @if ($producto->tiene_descuento)
                                     <span class="text-sm text-outline line-through">
                                         ${{ number_format($producto->precio_lista, 2) }}

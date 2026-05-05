@@ -1,42 +1,166 @@
 <x-layouts::public :title="__('Inicio')">
 
     {{-- ═══════════════════════════════════════════
-         HERO — Full screen editorial
+        HERO — 3 Slides
     ════════════════════════════════════════════ --}}
-    <section class="relative h-screen w-full overflow-hidden flex items-center justify-center">
+    <section class="relative h-screen w-full overflow-hidden"
+            x-data="{
+                slide: 0,
+                total: 3,
+                timer: null,
+                start() {
+                    this.stop();
+                    this.timer = setInterval(() => this.next(), 10000);
+                },
+                stop() {
+                    clearInterval(this.timer);
+                },
+                next() {
+                    this.slide = (this.slide + 1) % this.total;
+                },
+                prev() {
+                    this.slide = (this.slide - 1 + this.total) % this.total;
+                },
+                goTo(i) {
+                    this.slide = i;
+                    this.start();
+                }
+            }"
+            x-init="start()"
+            @mouseenter="stop()"
+            @mouseleave="start()">
 
-        {{-- Imagen de fondo --}}
-        <div class="absolute inset-0 z-0 bg-stone-200">
-            <img src="https://placehold.co/1600x900/2a2420/ffffff?text=1310+Studio"
-                 alt="Hero floral"
-                 class="w-full h-full object-cover opacity-90 scale-105">
-            <div class="absolute inset-0 bg-black/20"></div>
+        {{-- ────────────────────────────────────────
+            SLIDE 1 — Imagen de fondo
+        ──────────────────────────────────────────── --}}
+        <div class="absolute inset-0 transition-opacity duration-1000"
+            :class="slide === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'">
+
+            <img src="{{ asset('images/hero_1.jpg') }}"
+                alt="1310 Studio"
+                class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/25"></div>
+
+            {{-- Copy centrado --}}
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center space-y-8 px-4">
+                <p class="font-body text-white/90 text-2xl tracking-widest uppercase font-light"
+                style="text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                    ELEGANCIA EN ESTADO NATURAL
+                </p>
+                <h1 class="font-serif font-light italic text-white drop-shadow-md"
+                    style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                    Luxury Flower Lab
+                </h1>
+                <div class="pt-4">
+                    <a href="{{ route('categorias.index') }}" wire:navigate
+                    class="inline-block bg-primary text-on-primary px-12 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-700">
+                        Ramos y arreglos
+                    </a>
+                </div>
+            </div>
+
         </div>
 
-        {{-- Contenido central --}}
-        <div class="relative z-10 text-center space-y-8 max-w-4xl px-4 flex flex-col items-center">
-            <p class="font-body text-white/90 text-2xl tracking-widest uppercase font-light"
-               style="text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
-                ELEGANCIA EN ESTADO NATURAL
-            </p>
-            <h1 class="font-serif font-light italic text-white drop-shadow-md"
-                style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
-                Luxury Flower Lab
-            </h1>
-            <div class="pt-4">
-                <a href="{{ route('categorias.index') }}" wire:navigate
-                   class="inline-block bg-primary text-on-primary px-12 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-700">
-                    Ramos y arreglos
-                </a>
+
+        {{-- ────────────────────────────────────────
+            SLIDE 2 — Video de fondo
+        ──────────────────────────────────────────── --}}
+        <div class="absolute inset-0 transition-opacity duration-1000"
+            :class="slide === 1 ? 'opacity-100 z-10' : 'opacity-0 z-0'">
+
+            <video class="w-full h-full object-cover"
+                autoplay muted loop playsinline>
+                <source src="{{ asset('videos/video_hero_1.mp4') }}" type="video/mp4">
+            </video>
+            <div class="absolute inset-0 bg-black/30"></div>
+
+            {{-- Copy centrado --}}
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center space-y-8 px-4">
+                <p class="font-body text-white/90 text-2xl tracking-widest uppercase font-light"
+                style="text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                    EL ARTE DE LO VIVO
+                </p>
+                <h1 class="font-serif font-light italic text-white drop-shadow-md"
+                    style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                    Cada flor, una historia
+                </h1>
             </div>
+
         </div>
 
-        {{-- Scroll indicator --}}
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 text-white/80">
-            <span class="text-[10px] tracking-[0.2em] uppercase font-light">Scroll</span>
-            <div class="w-px h-12 bg-white/40 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1/2 bg-white animate-bounce"></div>
+
+        {{-- ────────────────────────────────────────
+            SLIDE 3 — Capas: fondo · logo · flor
+        ──────────────────────────────────────────── --}}
+        <div class="absolute inset-0 transition-opacity duration-1000"
+            :class="slide === 2 ? 'opacity-100 z-10' : 'opacity-0 z-0'">
+
+            {{-- Capa 1: fondo — imagen en cover --}}
+            <div class="absolute inset-0">
+                <img src="{{ asset('images/hero_bg.jpg') }}"
+                    alt=""
+                    class="w-full h-full object-cover select-none pointer-events-none">
             </div>
+
+            {{-- Capa 2: logo + textos centrados en columna --}}
+                <div class="absolute inset-0 flex flex-col items-center justify-center gap-8">
+                    <img src="{{ asset('images/logo.png') }}"
+                        alt="1310 Studio"
+                        class="w-[15%] max-w-xl opacity-90 select-none pointer-events-none">
+
+                    <p class="font-body text-white/80 text-sm tracking-[0.3em] uppercase font-light">
+                        Luxury Flower Lab
+                    </p>
+                    <h1 class="font-serif font-light text-white text-center leading-tight"
+                        style="font-size: 4rem; line-height: 1.1">
+                        La belleza <em>que permanece.</em>
+                    </h1>
+                    <div class="pt-2">
+                        <a href="{{ route('categorias.index') }}" wire:navigate
+                        class="inline-block border border-white text-white px-12 py-4 text-xs tracking-[0.3em] uppercase hover:bg-white hover:text-on-surface transition-all duration-500">
+                            Explorar colección
+                        </a>
+                    </div>
+                </div>
+
+            {{-- Capa 3: flor con transparencia, cuadrada, pegada al fondo, alineada a la derecha --}}
+            <div class="absolute bottom-0 right-0 h-full aspect-square pointer-events-none">
+                <img src="{{ asset('images/flor_hero.png') }}"
+                    alt=""
+                    class="w-full h-full object-cover object-top select-none"
+                    style="animation: flor-drift 8s ease-in-out infinite;">
+            </div>
+
+        </div>
+
+
+        {{-- ────────────────────────────────────────
+            Controles: flechas
+        ──────────────────────────────────────────── --}}
+        <button @click="prev(); start()"
+                class="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center transition-colors duration-300 cursor-pointer"
+                :class="slide === 2 ? 'text-white/70 hover:text-white' : 'text-white/70 hover:text-white'">
+            <flux:icon name="chevron-left" class="w-8 h-8" />
+        </button>
+        <button @click="next(); start()"
+                class="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center transition-colors duration-300 cursor-pointer"
+                :class="slide === 2 ? 'text-white/70 hover:text-white' : 'text-white/70 hover:text-white'">
+            <flux:icon name="chevron-right" class="w-8 h-8" />
+        </button>
+
+
+        {{-- ────────────────────────────────────────
+            Controles: dots
+        ──────────────────────────────────────────── --}}
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
+            <template x-for="i in total" :key="i">
+                <button @click="goTo(i - 1)"
+                        class="transition-all duration-500 rounded-full cursor-pointer"
+                        :class="slide === i - 1
+                            ? 'w-8 h-[3px] bg-white'
+                            : 'w-[3px] h-[3px] bg-white/50 hover:bg-white/80'">
+                </button>
+            </template>
         </div>
 
     </section>
@@ -51,7 +175,7 @@
             {{-- Imagen --}}
             <div class="w-full md:w-1/2 relative">
                 <div class="aspect-[3/4] bg-stone-100 overflow-hidden">
-                    <img src="https://placehold.co/600x800/e8e0d8/5a4a3a?text=Arreglo+floral"
+                    <img src="/images/arreglo_floral.jpg"
                          alt="Arreglo floral editorial"
                          class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
                 </div>
@@ -80,7 +204,7 @@
 
 
     {{-- ═══════════════════════════════════════════
-         CARRUSEL — Colección (CSS infinite scroll)
+        CARRUSEL — Productos destacados
     ════════════════════════════════════════════ --}}
     <section class="py-24 bg-surface-container-low overflow-hidden">
 
@@ -91,53 +215,130 @@
             </p>
         </div>
 
+        @if($destacados->isNotEmpty())
         <div class="w-full overflow-hidden">
-            <div class="flex gap-12 px-8 w-max"
-                 style="animation: scroll-carousel 40s linear infinite;"
-                 x-data
-                 @mouseenter="$el.style.animationPlayState='paused'"
-                 @mouseleave="$el.style.animationPlayState='running'">
+            <div class="flex gap-10 w-max"
+                x-data
+                @mouseenter="$el.style.animationPlayState='paused'"
+                @mouseleave="$el.style.animationPlayState='running'"
+                style="animation: scroll-carousel 40s linear infinite;">
 
-                @php
-                $coleccion = [
-                    ['Ivory Form',         'ede8e0/7a6a58', 'Minimalismo en estado puro sobre formas orgánicas.'],
-                    ['Lila Whisper',       'e8e0f0/5a4a7a', 'Un susurro de elegancia en tonos lavanda y lila.'],
-                    ['Tulip Line',         'f0e8e0/7a5a4a', 'La danza de los tulipanes en diseño arquitectónico.'],
-                    ['Golden Silhouette',  'f0ece0/7a6a3a', 'Escultura floral que captura la luz del atardecer.'],
-                    ['Orchid Veil',        'e8f0ec/3a6a5a', 'La pureza de la orquídea en un velo de sofisticación.'],
-                    ['Magenta Bloom',      'f0e0e8/7a3a5a', 'Intensidad cromática y texturas profundas.'],
-                ];
-                @endphp
+                @php $items = $destacados->count() < 4 ? $destacados->concat($destacados) : $destacados; @endphp
 
-                @foreach (array_merge($coleccion, $coleccion) as $i => $pieza)
-                    <div class="group cursor-pointer flex-shrink-0" style="width: 300px;">
-                        <div class="overflow-hidden bg-white relative" style="aspect-ratio: 3/4;">
-                            <img src="https://placehold.co/600x800/{{ $pieza[1] }}?text={{ urlencode($pieza[0]) }}"
-                                 alt="{{ $pieza[0] }}"
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000">
-                            {{-- Overlay hover --}}
-                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center p-6 text-center">
-                                <p class="text-white font-light text-sm tracking-wide leading-relaxed">
-                                    {{ $pieza[2] }}
+                {{-- Doble loop para el efecto infinito --}}
+                @foreach ([$items, $items] as $grupo)
+                    @foreach ($grupo as $producto)
+                        @php $imagen = $producto->galeria->first(); @endphp
+                        <a href="{{ route('productos.show', $producto->slug) }}" wire:navigate
+                        class="group flex-shrink-0 block" style="width: 280px;">
+
+                            {{-- Imagen --}}
+                            <div class="overflow-hidden bg-stone-100 relative" style="aspect-ratio: 3/4;">
+                                @if($imagen)
+                                    <img src="{{ Storage::disk('public')->url($imagen->imagen) }}"
+                                        alt="{{ $producto->nombre }}"
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000">
+                                @else
+                                    <div class="w-full h-full bg-stone-200 flex items-center justify-center">
+                                        <flux:icon name="photo" class="w-10 h-10 text-outline-variant" />
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Nombre --}}
+                            <div class="mt-4 text-center">
+                                <p class="font-serif text-sm italic text-on-surface-variant tracking-wide">
+                                    {{ $producto->nombre }}
                                 </p>
                             </div>
-                        </div>
-                        <div class="mt-6 text-center">
-                            <h3 class="font-serif text-lg text-on-surface italic">{{ $pieza[0] }}</h3>
-                            <div class="mt-2 w-8 h-px bg-outline-variant mx-auto"></div>
-                        </div>
-                    </div>
+
+                        </a>
+                    @endforeach
                 @endforeach
 
             </div>
         </div>
+        @endif
 
     </section>
 
+    {{-- ═══════════════════════════════════════════
+        GRID — Directorio floral al azar
+    ════════════════════════════════════════════ --}}
+    @if($flores->isNotEmpty())
+    <section class="py-24 bg-surface">
+        <div class="px-8 max-w-[1440px] mx-auto">
+
+            <div class="mb-16 flex items-end justify-between">
+                <div class="space-y-3">
+                    <h2 class="font-serif text-5xl text-on-surface leading-tight">Directorio Floral</h2>
+                    <p class="text-[11px] text-on-surface-variant uppercase tracking-[0.2em]">
+                        Conoce nuestras flores
+                    </p>
+                </div>
+                <a href="{{ route('directorio-floral.index') }}" wire:navigate
+                class="hidden md:inline-block text-[10px] tracking-[0.2em] uppercase border-b border-outline pb-1 text-on-surface-variant hover:text-on-surface hover:border-on-surface transition-all duration-300">
+                    Ver directorio completo
+                </a>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach($flores as $flor)
+                    @php $imagen = $flor->galeria->first() ?? null; @endphp
+                    <a href="{{ route('directorio-floral.show', $flor->slug) }}" wire:navigate
+                    class="group block relative overflow-hidden bg-stone-100" style="aspect-ratio: 1/1;">
+
+                        {{-- Imagen --}}
+                        @if($imagen)
+                            <img src="{{ Storage::disk('public')->url($imagen->imagen) }}"
+                                alt="{{ $flor->nombre }}"
+                                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        @elseif($flor->imagen)
+                            <img src="{{ Storage::disk('public')->url($flor->imagen) }}"
+                                alt="{{ $flor->nombre }}"
+                                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        @else
+                            <div class="w-full h-full bg-stone-200 flex items-center justify-center">
+                                <flux:icon name="photo" class="w-10 h-10 text-outline-variant" />
+                            </div>
+                        @endif
+
+                        {{-- Overlay con nombre --}}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent
+                                    flex items-end p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                            <div>
+                                <p class="font-serif italic text-white text-lg leading-tight">
+                                    {{ $flor->nombre }}
+                                </p>
+                                @if($flor->categoria)
+                                    <p class="text-white/60 text-[10px] tracking-[0.15em] uppercase mt-1">
+                                        {{ $flor->categoria }}
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+
+                    </a>
+                @endforeach
+            </div>
+
+            {{-- Link móvil --}}
+            <div class="mt-10 text-center md:hidden">
+                <a href="{{ route('directorio-floral.index') }}" wire:navigate
+                class="text-[10px] tracking-[0.2em] uppercase border-b border-outline pb-1 text-on-surface-variant hover:text-on-surface transition-all duration-300">
+                    Ver directorio completo
+                </a>
+            </div>
+
+        </div>
+    </section>
+    @endif
+
 
     {{-- ═══════════════════════════════════════════
-         GRID VISUAL — Categorías estilo Instagram
+        GRID VISUAL — Categorías
     ════════════════════════════════════════════ --}}
+    @if($categorias->isNotEmpty())
     <section class="py-32 bg-surface">
         <div class="px-8 max-w-[1440px] mx-auto">
 
@@ -148,33 +349,41 @@
                 </p>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                @foreach ([
-                    ['Ramos',      'f0e8e4/8a5a4a'],
-                    ['Orquídeas',  'e4eef0/3a6a7a'],
-                    ['Eventos',    'e8f0e4/4a6a3a'],
-                    ['Plantas',    'f0ece4/6a5a3a'],
-                    ['Bouquets',   'f0e4ec/7a3a6a'],
-                    ['Silvestres', 'eef0e4/5a6a3a'],
-                    ['Corporativo','e4e8f0/3a4a7a'],
-                    ['Suscripción','f0eae4/7a5a3a'],
-                ] as $cat)
-                    <a href="{{ route('categorias.index') }}" wire:navigate
-                       class="relative aspect-square overflow-hidden bg-stone-100 group block">
-                        <img src="https://placehold.co/600x600/{{ $cat[1] }}?text={{ urlencode($cat[0]) }}"
-                             alt="{{ $cat[0] }}"
-                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                            <span class="text-white text-xs tracking-[0.15em] uppercase font-light">
-                                {{ $cat[0] }}
-                            </span>
+            <div class="grid grid-cols-2 gap-4">
+                @foreach($categorias as $categoria)
+                    <a href="{{ route('categorias.show', $categoria->slug) }}" wire:navigate
+                    class="relative overflow-hidden bg-stone-100 group block" style="aspect-ratio: 4/3;">
+
+                        @if($categoria->imagen)
+                            <img src="{{ Storage::disk('public')->url($categoria->imagen) }}"
+                                alt="{{ $categoria->titulo }}"
+                                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        @else
+                            <div class="w-full h-full bg-stone-200"></div>
+                        @endif
+
+                        {{-- Overlay --}}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent
+                                    flex items-end p-8">
+                            <div class="translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                <h3 class="font-serif italic text-white text-2xl leading-tight">
+                                    {{ $categoria->titulo }}
+                                </h3>
+                                @if($categoria->resumen)
+                                    <p class="text-white/70 text-xs tracking-wide mt-2 font-light max-w-xs">
+                                        {{ $categoria->resumen }}
+                                    </p>
+                                @endif
+                            </div>
                         </div>
+
                     </a>
                 @endforeach
             </div>
 
         </div>
     </section>
+    @endif
 
 
     {{-- ═══════════════════════════════════════════
@@ -228,11 +437,13 @@
 </x-layouts::public>
 
 {{-- CSS animación carrusel --}}
-@push('styles')
 <style>
     @keyframes scroll-carousel {
         0%   { transform: translateX(0); }
         100% { transform: translateX(calc(-300px * 6 - 3rem * 6)); }
     }
+    @keyframes flor-drift {
+        0%, 100% { transform: translateX(0px); }
+        50%       { transform: translateX(12px); }
+    }
 </style>
-@endpush

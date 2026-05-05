@@ -8,7 +8,22 @@ class HomeController extends Controller
 {
     public function index()
     {
-        return view('pages.public.home');
+        $destacados = \App\Models\Producto::destacados()
+            ->activos()
+            ->with('galeria')
+            ->get();
+
+        $flores = \App\Models\DirectorioFloral::activos()
+            ->with('galeria')
+            ->inRandomOrder()
+            ->limit(4)
+            ->get();
+
+        $categorias = \App\Models\Categoria::raiz()
+            ->where('estado', 'publicado')
+            ->get();
+
+        return view('pages.public.home', compact('destacados', 'flores', 'categorias'));
     }
 
     public function empresas()

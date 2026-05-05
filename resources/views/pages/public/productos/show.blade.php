@@ -17,21 +17,40 @@
         </p>
 
         {{-- Layout principal --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24"
+             x-data="{
+                 activa: 0,
+                 lightbox: false,
+                 zoom: false,
+                 total: {{ $producto->galeria->count() }},
+                 next() { this.activa = (this.activa + 1) % this.total; this.zoom = false; },
+                 prev() { this.activa = (this.activa - 1 + this.total) % this.total; this.zoom = false; },
+             }"
+             @keydown.escape.window="lightbox = false; zoom = false"
+             @keydown.arrow-right.window="if(lightbox) next()"
+             @keydown.arrow-left.window="if(lightbox) prev()">
 
             {{-- Galería --}}
-            <div x-data="{ activa: 0 }">
-                {{-- Imagen principal --}}
-                <div class="aspect-[3/4] overflow-hidden bg-surface-container-low mb-4">
+            <div>
+                {{-- Imagen principal cuadrada --}}
+                <div class="aspect-square overflow-hidden bg-surface-container-low mb-4 relative group cursor-zoom-in"
+                     @click="lightbox = true">
                     @foreach ($producto->galeria as $i => $img)
                         <img src="{{ Storage::url($img->imagen) }}"
                              alt="{{ $producto->nombre }}"
                              x-show="activa === {{ $i }}"
-                             class="w-full h-full object-cover">
+                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     @endforeach
                     @if ($producto->galeria->isEmpty())
                         <div class="w-full h-full flex items-center justify-center">
                             <flux:icon name="photo" class="w-16 h-16 text-outline-variant" />
+                        </div>
+                    @endif
+
+                    {{-- Indicador de galería --}}
+                    @if ($producto->galeria->count() > 1)
+                        <div class="absolute bottom-4 right-4 bg-black/50 text-white text-[10px] tracking-[0.1em] px-3 py-1">
+                            <span x-text="activa + 1"></span> / {{ $producto->galeria->count() }}
                         </div>
                     @endif
                 </div>
@@ -42,7 +61,7 @@
                         @foreach ($producto->galeria as $i => $img)
                             <button @click="activa = {{ $i }}"
                                     class="flex-shrink-0 w-20 h-20 overflow-hidden border-2 transition-colors duration-200"
-                                    :class="activa === {{ $i }} ? 'border-primary' : 'border-transparent'">
+                                    :class="activa === {{ $i }} ? 'border-primary' : 'border-transparent hover:border-outline-variant'">
                                 <img src="{{ Storage::url($img->imagen) }}"
                                      alt="{{ $producto->nombre }}"
                                      class="w-full h-full object-cover">
@@ -73,16 +92,20 @@
 
                 {{-- Precio --}}
                 <div class="flex items-baseline gap-4">
-                    <span class="font-serif text-3xl text-on-surface">
-                        ${{ number_format($producto->precio_venta, 2) }}
-                    </span>
-                    @if ($producto->tiene_descuento)
-                        <span class="text-lg text-outline line-through">
-                            ${{ number_format($producto->precio_lista, 2) }}
+                    @if($producto->precio_venta > 0)
+                        <span class="font-serif text-3xl text-on-surface">
+                            ${{ number_format($producto->precio_venta, 2) }}
                         </span>
-                        <span class="text-xs tracking-[0.1em] uppercase text-tertiary">
-                            -{{ $producto->porcentaje_descuento }}% descuento
-                        </span>
+                        @if ($producto->tiene_descuento)
+                            <span class="text-lg text-outline line-through">
+                                ${{ number_format($producto->precio_lista, 2) }}
+                            </span>
+                            <span class="text-xs tracking-[0.1em] uppercase text-tertiary">
+                                -{{ $producto->porcentaje_descuento }}% descuento
+                            </span>
+                        @endif
+                    @else
+                        <span class="font-serif text-2xl text-on-surface-variant italic">Próximamente</span>
                     @endif
                 </div>
 
@@ -98,7 +121,7 @@
                     <a href="https://wa.me/5212345678?text={{ urlencode('Hola, me interesa el producto: ' . $producto->nombre) }}"
                        target="_blank"
                        class="inline-block bg-primary text-on-primary px-10 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-300 text-center">
-                        Pedir por WhatsApp
+                        Pre-ordena por WhatsApp
                     </a>
                     <a href="{{ route('visitanos') }}"
                        class="inline-block border border-outline-variant text-on-surface px-10 py-4 text-xs tracking-[0.3em] uppercase hover:border-on-surface transition-all duration-300 text-center">
@@ -134,6 +157,59 @@
                 @endif
 
             </div>
+
+            {{-- ─── LIGHTBOX ─────────────────────────────── --}}
+            <div x-show="lightbox"
+                 x-transition:enter="transition duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center"
+                 @click.self="lightbox = false; zoom = false"
+                 style="display: none;">
+
+                {{-- Cerrar --}}
+                <button @click="lightbox = false; zoom = false"
+                        class="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-10">
+                    <flux:icon name="x-mark" class="w-8 h-8" />
+                </button>
+
+                {{-- Contador --}}
+                @if($producto->galeria->count() > 1)
+                    <div class="absolute top-6 left-1/2 -translate-x-1/2 text-white/50 text-[11px] tracking-[0.2em] uppercase">
+                        <span x-text="activa + 1"></span> / {{ $producto->galeria->count() }}
+                    </div>
+                @endif
+
+                {{-- Imagen con zoom --}}
+                <div class="relative w-full h-full flex items-center justify-center overflow-hidden"
+                     :class="zoom ? 'cursor-zoom-out' : 'cursor-zoom-in'"
+                     @click="zoom = !zoom">
+                    @foreach ($producto->galeria as $i => $img)
+                        <img src="{{ Storage::url($img->imagen) }}"
+                             alt="{{ $producto->nombre }}"
+                             x-show="activa === {{ $i }}"
+                             :class="zoom ? 'scale-[2]' : 'scale-100'"
+                             class="max-h-screen max-w-full object-contain transition-transform duration-500 select-none">
+                    @endforeach
+                </div>
+
+                {{-- Flechas --}}
+                @if($producto->galeria->count() > 1)
+                    <button @click.stop="prev()"
+                            class="absolute left-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors">
+                        <flux:icon name="chevron-left" class="w-10 h-10" />
+                    </button>
+                    <button @click.stop="next()"
+                            class="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors">
+                        <flux:icon name="chevron-right" class="w-10 h-10" />
+                    </button>
+                @endif
+
+            </div>
+
         </div>
 
         {{-- Productos relacionados --}}
@@ -146,19 +222,25 @@
                     @foreach ($relacionados as $rel)
                         @php $portada = $rel->galeria->first(); @endphp
                         <a href="{{ route('productos.show', $rel->slug) }}" class="group block">
-                            <div class="aspect-[3/4] overflow-hidden bg-surface-container-low mb-3">
+                            <div class="aspect-square overflow-hidden bg-surface-container-low mb-3">
                                 @if ($portada)
                                     <img src="{{ Storage::url($portada->imagen) }}"
                                          alt="{{ $rel->nombre }}"
                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 @endif
                             </div>
-                            <h3 class="font-serif text-sm text-on-surface group-hover:text-primary transition-colors duration-300">
-                                {{ $rel->nombre }}
-                            </h3>
-                            <p class="text-sm text-on-surface-variant mt-1">
-                                ${{ number_format($rel->precio_venta, 2) }}
-                            </p>
+                            <div class="text-center space-y-1">
+                                <h3 class="font-serif text-sm text-on-surface group-hover:text-primary transition-colors duration-300">
+                                    {{ $rel->nombre }}
+                                </h3>
+                                <p class="text-sm text-on-surface-variant">
+                                    @if($rel->precio_venta > 0)
+                                        ${{ number_format($rel->precio_venta, 2) }}
+                                    @else
+                                        <span class="italic text-on-surface-variant/60">Próximamente</span>
+                                    @endif
+                                </p>
+                            </div>
                         </a>
                     @endforeach
                 </div>

@@ -1,103 +1,210 @@
 <x-layouts::public :title="__('Eventos')">
 
-    {{-- Hero --}}
-    <section class="relative h-[60vh] overflow-hidden flex items-center justify-center">
-        <div class="absolute inset-0 bg-stone-900">
-            <div class="absolute inset-0 bg-black/50"></div>
-        </div>
-        <div class="relative z-10 text-center px-8 max-w-3xl">
-            <p class="text-[11px] tracking-[0.3em] uppercase text-white/70 mb-6">Para momentos que importan</p>
-            <h1 class="font-serif text-5xl md:text-6xl text-white italic mb-6">
-                Flores para tus eventos
-            </h1>
-            <p class="text-white/80 font-light text-lg leading-relaxed">
-                Transformamos espacios en experiencias. Desde bodas íntimas hasta grandes banquetes corporativos.
-            </p>
+    @php
+    $fotos = [
+        [
+            'url'    => 'https://images.unsplash.com/photo-1521543832500-49e69fb2bea2?w=1200&auto=format&fit=crop&q=80',
+            'alt'    => 'Ramo de novia',
+            'autor'  => 'Thomas AE',
+        ],
+        [
+            'url'    => 'https://images.unsplash.com/photo-1632528011905-54e2464961f4?w=1200&auto=format&fit=crop&q=80',
+            'alt'    => 'Mesa con flores y copas',
+            'autor'  => 'José León',
+        ],
+        [
+            'url'    => 'https://images.unsplash.com/photo-1769812343362-39484bff6db4?w=1200&auto=format&fit=crop&q=80',
+            'alt'    => 'Mesa larga con flores blancas',
+            'autor'  => 'Jonathan Borba',
+        ],
+        [
+            'url'    => 'https://images.unsplash.com/photo-1680131273996-529cc8bbdad6?w=1200&auto=format&fit=crop&q=80',
+            'alt'    => 'Mesa de banquete con jarrón floral',
+            'autor'  => 'Stephanie Klepacki',
+        ],
+        [
+            'url'    => 'https://images.unsplash.com/photo-1639986098217-17112e22f1ed?w=1200&auto=format&fit=crop&q=80',
+            'alt'    => 'Arco floral en playa',
+            'autor'  => 'Nadiia Ganzhyi',
+        ],
+    ];
+    @endphp
+
+
+    {{-- ═══════════════════════════════════════════
+         HERO — Full width editorial
+    ════════════════════════════════════════════ --}}
+    <section class="relative h-[70vh] overflow-hidden">
+        <img src="{{ $fotos[2]['url'] }}"
+             alt="Eventos 1310 Studio"
+             class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-8">
+            <p class="text-[11px] tracking-[0.3em] uppercase text-white/70 mb-4">Diseño floral para</p>
+            <h1 class="font-serif text-6xl md:text-8xl text-white font-light leading-none">Eventos</h1>
         </div>
     </section>
 
-    {{-- Servicios --}}
+
+    {{-- ═══════════════════════════════════════════
+         INTRO — Copy editorial
+    ════════════════════════════════════════════ --}}
+    <section class="py-24 px-8 max-w-[1440px] mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div class="space-y-6">
+                <h2 class="font-serif text-4xl text-on-surface leading-tight">
+                    Cada evento merece<br><em>una historia floral.</em>
+                </h2>
+                <p class="text-on-surface-variant font-light leading-relaxed max-w-md">
+                    Diseñamos experiencias florales para bodas, recepciones corporativas,
+                    cumpleaños y celebraciones íntimas. Cada pieza es concebida desde cero
+                    para reflejar la personalidad del evento.
+                </p>
+                <p class="text-on-surface-variant font-light leading-relaxed max-w-md">
+                    Trabajamos contigo desde la conceptualización hasta el montaje,
+                    cuidando cada detalle para que el resultado supere tu visión.
+                </p>
+            </div>
+            <div class="aspect-[4/5] overflow-hidden bg-stone-100">
+                <img src="{{ $fotos[0]['url'] }}"
+                     alt="{{ $fotos[0]['alt'] }}"
+                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
+            </div>
+        </div>
+    </section>
+
+
+    {{-- ═══════════════════════════════════════════
+         SERVICIOS — Grid asimétrico
+    ════════════════════════════════════════════ --}}
+    <section class="bg-surface-container-low py-24">
+        <div class="px-8 max-w-[1440px] mx-auto">
+
+            <div class="mb-16 space-y-3">
+                <p class="text-[11px] tracking-[0.2em] uppercase text-on-surface-variant">Lo que ofrecemos</p>
+                <h2 class="font-serif text-4xl text-on-surface">Servicios florales</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                {{-- Tarjeta grande --}}
+                <div class="md:col-span-2 relative overflow-hidden bg-stone-200" style="aspect-ratio: 16/9;">
+                    <img src="{{ $fotos[1]['url'] }}"
+                         alt="{{ $fotos[1]['alt'] }}"
+                         class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-8">
+                        <div>
+                            <h3 class="font-serif italic text-white text-2xl mb-2">Bodas & Ceremonias</h3>
+                            <p class="text-white/70 text-sm font-light max-w-sm leading-relaxed">
+                                Ramos de novia, arcos florales, centros de mesa y decoración completa del venue.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tarjeta pequeña --}}
+                <div class="relative overflow-hidden bg-stone-200" style="aspect-ratio: 4/5;">
+                    <img src="{{ $fotos[4]['url'] }}"
+                         alt="{{ $fotos[4]['alt'] }}"
+                         class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-6">
+                        <div>
+                            <h3 class="font-serif italic text-white text-xl mb-2">Arcos & Estructuras</h3>
+                            <p class="text-white/70 text-xs font-light leading-relaxed">
+                                Instalaciones florales de gran formato para ceremonias y sesiones fotográficas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tarjeta pequeña 2 --}}
+                <div class="relative overflow-hidden bg-stone-200" style="aspect-ratio: 4/5;">
+                    <img src="{{ $fotos[3]['url'] }}"
+                         alt="{{ $fotos[3]['alt'] }}"
+                         class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-6">
+                        <div>
+                            <h3 class="font-serif italic text-white text-xl mb-2">Banquetes & Cenas</h3>
+                            <p class="text-white/70 text-xs font-light leading-relaxed">
+                                Centros de mesa, corredores florales y decoración de mesas de gran formato.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tarjeta grande 2 --}}
+                <div class="md:col-span-2 relative overflow-hidden bg-stone-200" style="aspect-ratio: 16/9;">
+                    <img src="{{ $fotos[2]['url'] }}"
+                         alt="{{ $fotos[2]['alt'] }}"
+                         class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-8">
+                        <div>
+                            <h3 class="font-serif italic text-white text-2xl mb-2">Eventos Corporativos</h3>
+                            <p class="text-white/70 text-sm font-light max-w-sm leading-relaxed">
+                                Instalaciones para lanzamientos, cenas de empresa y espacios de trabajo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    {{-- ═══════════════════════════════════════════
+         PROCESO — Pasos
+    ════════════════════════════════════════════ --}}
     <section class="py-24 px-8 max-w-[1440px] mx-auto">
 
-        <div class="text-center mb-20">
-            <p class="text-[11px] tracking-[0.2em] uppercase text-on-surface-variant mb-4">Lo que hacemos</p>
-            <h2 class="font-serif text-4xl text-on-surface">Nuestros servicios para eventos</h2>
+        <div class="mb-16 text-center space-y-3">
+            <p class="text-[11px] tracking-[0.2em] uppercase text-on-surface-variant">Cómo trabajamos</p>
+            <h2 class="font-serif text-4xl text-on-surface">El proceso</h2>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            @foreach ([
-                ['Bodas', 'heart', 'Creamos la atmósfera perfecta para el día más especial. Desde el bouquet de novia hasta la decoración completa del salón, cada detalle cuenta.'],
-                ['Banquetes', 'building-office', 'Centros de mesa, arreglos de bienvenida y decoración de espacios para banquetes y cenas de gala que impresionan.'],
-                ['Corporativos', 'briefcase', 'Flores para recepciones, lobbies, salas de juntas y eventos empresariales. Imagen y elegancia que refuerzan tu marca.'],
-                ['Cumpleaños', 'gift', 'Arreglos personalizados para celebraciones especiales. Diseños únicos que sorprenden y emocionan.'],
-                ['Bautizos y XV años', 'sparkles', 'Decoración floral para los momentos de vida más queridos. Tierna, elegante y memorable.'],
-                ['Instalaciones', 'squares-plus', 'Arcos florales, paredes de flores y estructuras decorativas para photobooth y escenarios.'],
-            ] as [$titulo, $icono, $desc])
-                <div class="flex flex-col gap-4">
-                    <div class="w-10 h-10 flex items-center justify-center border border-outline-variant">
-                        <flux:icon name="{{ $icono }}" class="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 class="font-serif text-xl text-on-surface">{{ $titulo }}</h3>
-                    <p class="text-on-surface-variant font-light leading-relaxed text-sm">{{ $desc }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            @foreach([
+                ['01', 'Consulta', 'Nos reunimos para entender tu visión, el tipo de evento, paleta de color y presupuesto.'],
+                ['02', 'Propuesta', 'Diseñamos una propuesta personalizada con referencias visuales y detalle de flores.'],
+                ['03', 'Confirmación', 'Aprobamos el diseño, agendamos fechas y aseguramos la disponibilidad de flores.'],
+                ['04', 'Montaje', 'Llegamos antes del evento para instalar cada pieza con precisión y cuidado.'],
+            ] as $paso)
+                <div class="text-center space-y-4">
+                    <p class="font-serif text-5xl text-outline-variant">{{ $paso[0] }}</p>
+                    <div class="w-8 h-px bg-primary mx-auto"></div>
+                    <h3 class="font-serif text-xl text-on-surface">{{ $paso[1] }}</h3>
+                    <p class="text-sm text-on-surface-variant font-light leading-relaxed">{{ $paso[2] }}</p>
                 </div>
             @endforeach
         </div>
 
     </section>
 
-    {{-- Por qué elegirnos --}}
-    <section class="py-24 bg-surface-container-low border-y border-outline-variant">
-        <div class="px-8 max-w-[1440px] mx-auto">
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                <div>
-                    <p class="text-[11px] tracking-[0.2em] uppercase text-on-surface-variant mb-6">Por qué 1310 Studio</p>
-                    <h2 class="font-serif text-4xl text-on-surface mb-10 leading-tight">
-                        Cada evento merece flores que cuenten su historia.
-                    </h2>
-                    <div class="space-y-6">
-                        @foreach ([
-                            ['Consulta personalizada', 'Nos reunimos contigo para entender tu visión, paleta de colores y presupuesto.'],
-                            ['Flores de temporada', 'Trabajamos con flores frescas de la mejor calidad, seleccionadas según la época del año.'],
-                            ['Montaje profesional', 'Nuestro equipo se encarga de la instalación y desmontaje el día del evento.'],
-                            ['Garantía de frescura', 'Todos nuestros arreglos se preparan el mismo día o la víspera del evento.'],
-                        ] as [$punto, $desc])
-                            <div class="flex gap-4">
-                                <div class="w-1 bg-primary flex-shrink-0 mt-1"></div>
-                                <div>
-                                    <p class="font-medium text-on-surface text-sm mb-1">{{ $punto }}</p>
-                                    <p class="text-on-surface-variant font-light text-sm leading-relaxed">{{ $desc }}</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="aspect-[4/3] bg-surface-container flex items-center justify-center">
-                    <flux:icon name="photo" class="w-16 h-16 text-outline-variant" />
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    {{-- CTA --}}
-    <section class="py-24 px-8 max-w-[1440px] mx-auto text-center">
-        <h2 class="font-serif text-4xl text-on-surface mb-6">¿Tienes un evento en mente?</h2>
-        <p class="text-on-surface-variant font-light max-w-md mx-auto mb-10 leading-relaxed">
-            Cuéntanos tu idea. Estaremos encantados de crear una propuesta personalizada para ti.
-        </p>
-        <div class="flex flex-wrap gap-4 justify-center">
-            <a href="https://wa.me/5212345678?text={{ urlencode('Hola, me gustaría cotizar decoración floral para un evento.') }}"
+    {{-- ═══════════════════════════════════════════
+         CTA — Contacto
+    ════════════════════════════════════════════ --}}
+    <section class="relative overflow-hidden">
+        <img src="{{ $fotos[0]['url'] }}"
+             alt="Contacto eventos"
+             class="w-full h-[50vh] object-cover object-top">
+        <div class="absolute inset-0 bg-black/55 flex flex-col items-center justify-center text-center px-8 gap-6">
+            <p class="text-[11px] tracking-[0.3em] uppercase text-white/60">¿Tienes un evento en mente?</p>
+            <h2 class="font-serif text-4xl md:text-5xl text-white font-light">Hablemos de tu proyecto</h2>
+            <a href="https://wa.me/5212345678?text={{ urlencode('Hola, me interesa el servicio de flores para eventos.') }}"
                target="_blank"
-               class="inline-block bg-primary text-on-primary px-12 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-300">
-                Solicitar cotización
-            </a>
-            <a href="{{ route('visitanos') }}"
-               class="inline-block border border-outline-variant text-on-surface px-12 py-4 text-xs tracking-[0.3em] uppercase hover:border-on-surface transition-all duration-300">
-                Visítanos
+               class="inline-block bg-white text-on-surface px-12 py-4 text-xs tracking-[0.3em] uppercase hover:bg-primary hover:text-on-primary transition-all duration-500 mt-2">
+                Contactar por WhatsApp
             </a>
         </div>
     </section>
+
+
+    {{-- Créditos Unsplash (buena práctica) --}}
+    <div class="py-3 px-8 bg-surface-container-low text-center">
+        <p class="text-[9px] tracking-[0.1em] uppercase text-outline/50">
+            Fotografías: Thomas AE, José León, Jonathan Borba, Stephanie Klepacki, Nadiia Ganzhyi — Unsplash
+        </p>
+    </div>
 
 </x-layouts::public>
