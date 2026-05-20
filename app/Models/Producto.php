@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+use App\Models\VariacionTipo;
+use App\Models\VariacionSku;
+
 class Producto extends Model
 {
     protected $table = 'productos';
@@ -54,6 +57,22 @@ class Producto extends Model
             'id_producto',
             'id_flor'
         );
+    }
+
+    public function variacionTipos(): HasMany
+    {
+        return $this->hasMany(VariacionTipo::class, 'id_producto')
+                    ->orderBy('orden');
+    }
+
+    public function variacionSkus(): HasMany
+    {
+        return $this->hasMany(VariacionSku::class, 'id_producto');
+    }
+
+    public function tieneVariaciones(): bool
+    {
+        return $this->variacionTipos()->exists();
     }
 
     // ─── Accessors ────────────────────────────────

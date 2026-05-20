@@ -1,118 +1,231 @@
 <x-layouts::app :title="'Editar: ' . $producto->nombre">
-    <div class="flex h-full w-full flex-1 flex-col gap-6">
+<div class="flex h-full w-full flex-1 flex-col gap-6">
 
-        <x-admin.page-header
-            :titulo="'Editar: ' . $producto->nombre"
-            :breadcrumbs="[
-                ['label' => 'Dashboard', 'route' => 'admin.dashboard'],
-                ['label' => 'Productos', 'route' => 'admin.productos.index'],
-                ['label' => $producto->nombre, 'route' => 'admin.productos.show', 'param' => $producto],
-                ['label' => 'Editar'],
-            ]"
-        />
+    <x-admin.page-header
+        :titulo="'Editar: ' . $producto->nombre"
+        :breadcrumbs="[
+            ['label' => 'Dashboard', 'route' => 'admin.dashboard'],
+            ['label' => 'Productos', 'route' => 'admin.productos.index'],
+            ['label' => $producto->nombre, 'route' => 'admin.productos.show', 'param' => $producto],
+            ['label' => 'Editar'],
+        ]"
+    />
 
-        {{-- Flash --}}
-        @if(session('success'))
-            <div class="rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 px-4 py-3">
-                <flux:text class="text-green-700 dark:text-green-400">{{ session('success') }}</flux:text>
-            </div>
-        @endif
+    {{-- Flash --}}
+    @if(session('success'))
+        <div class="rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 px-4 py-3">
+            <flux:text class="text-green-700 dark:text-green-400">{{ session('success') }}</flux:text>
+        </div>
+    @endif
 
-        @if($errors->any())
-            <div class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3">
-                <ul class="list-disc list-inside space-y-1">
-                    @foreach($errors->all() as $error)
-                        <li><flux:text class="text-red-700 dark:text-red-400 text-sm">{{ $error }}</flux:text></li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+    @if($errors->any())
+        <div class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3">
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $error)
+                    <li><flux:text class="text-red-700 dark:text-red-400 text-sm">{{ $error }}</flux:text></li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-        @php
-            $categoriasActivas = $producto->categorias->pluck('id')->toArray();
-            $floresActivas     = $producto->flores->pluck('id')->toArray();
-        @endphp
+    @php
+        $categoriasActivas = $producto->categorias->pluck('id')->toArray();
+        $floresActivas     = $producto->flores->pluck('id')->toArray();
+    @endphp
 
-        <div class="flex gap-6 items-start">
+    {{-- Contenedor principal con tabs --}}
+    <div x-data="{ tab: 'datos' }">
 
-            {{-- Columna principal --}}
-            <div class="flex-1 space-y-6">
-                <form id="form-datos" method="POST" action="{{ route('admin.productos.update', $producto) }}">
-                    @csrf
-                    @method('PUT')
+        {{-- Tab nav --}}
+        <div class="border-b border-zinc-200 dark:border-zinc-700 mb-6">
+            <nav class="flex gap-1">
+                <button type="button"
+                    @click="tab = 'datos'"
+                    :class="tab === 'datos'
+                        ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                    class="px-4 py-2.5 text-sm font-medium transition-colors">
+                    Datos
+                </button>
+                <button type="button"
+                    @click="tab = 'galeria'"
+                    :class="tab === 'galeria'
+                        ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                    class="px-4 py-2.5 text-sm font-medium transition-colors">
+                    Galería
+                </button>
+                <button type="button"
+                    @click="tab = 'tipos'"
+                    :class="tab === 'tipos'
+                        ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                    class="px-4 py-2.5 text-sm font-medium transition-colors">
+                    Tipos y opciones
+                </button>
+                <button type="button"
+                    @click="tab = 'combinaciones'"
+                    :class="tab === 'combinaciones'
+                        ? 'border-b-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white'
+                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                    class="px-4 py-2.5 text-sm font-medium transition-colors">
+                    Combinaciones
+                </button>
+            </nav>
+        </div>
 
-                    <div class="space-y-5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6">
+        {{-- ══════════════════════════════════════
+             TAB: DATOS
+             ══════════════════════════════════════ --}}
+        <div x-show="tab === 'datos'" x-cloak>
+            <div class="flex gap-6 items-start">
 
-                        <flux:field>
-                            <flux:label>Nombre *</flux:label>
-                            <flux:input name="nombre" value="{{ old('nombre', $producto->nombre) }}" required />
-                            <flux:error name="nombre" />
-                        </flux:field>
+                {{-- Columna principal --}}
+                <div class="flex-1">
+                    <form id="form-datos" method="POST" action="{{ route('admin.productos.update', $producto) }}">
+                        @csrf
+                        @method('PUT')
 
-                        <flux:field>
-                            <flux:label>Descripción corta</flux:label>
-                            <flux:textarea name="descripcion" rows="3">{{ old('descripcion', $producto->descripcion) }}</flux:textarea>
-                            <flux:error name="descripcion" />
-                        </flux:field>
+                        <div class="space-y-5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6">
 
-                        <flux:field>
-                            <flux:label>Detalles</flux:label>
-                            <textarea
-                                id="editor-detalles"
-                                name="detalles"
-                                class="sr-only"
-                            >{{ old('detalles', $producto->detalles) }}</textarea>
-                            <div id="editor-detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-40"></div>
-                            <flux:error name="detalles" />
-                        </flux:field>
-
-                        <div class="grid grid-cols-2 gap-4">
                             <flux:field>
-                                <flux:label>Precio lista</flux:label>
-                                <flux:input type="number" name="precio_lista" value="{{ old('precio_lista', $producto->precio_lista) }}" min="0" step="0.01" placeholder="0.00" />
-                                <flux:description>Precio tachado. Vacío si no aplica.</flux:description>
-                                <flux:error name="precio_lista" />
+                                <flux:label>Nombre *</flux:label>
+                                <flux:input name="nombre" value="{{ old('nombre', $producto->nombre) }}" required />
+                                <flux:error name="nombre" />
                             </flux:field>
+
                             <flux:field>
-                                <flux:label>Precio venta *</flux:label>
-                                <flux:input type="number" name="precio_venta" value="{{ old('precio_venta', $producto->precio_venta) }}" min="0" step="0.01" required />
-                                <flux:error name="precio_venta" />
+                                <flux:label>Descripción corta</flux:label>
+                                <flux:textarea name="descripcion" rows="3">{{ old('descripcion', $producto->descripcion) }}</flux:textarea>
+                                <flux:error name="descripcion" />
                             </flux:field>
+
+                            <flux:field>
+                                <flux:label>Detalles</flux:label>
+                                <textarea id="editor-detalles" name="detalles" class="sr-only">{{ old('detalles', $producto->detalles) }}</textarea>
+                                <div id="editor-detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-40"></div>
+                                <flux:error name="detalles" />
+                            </flux:field>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <flux:field>
+                                    <flux:label>Precio lista</flux:label>
+                                    <flux:input type="number" name="precio_lista" value="{{ old('precio_lista', $producto->precio_lista) }}" min="0" step="0.01" placeholder="0.00" />
+                                    <flux:description>Precio tachado. Vacío si no aplica.</flux:description>
+                                    <flux:error name="precio_lista" />
+                                </flux:field>
+                                <flux:field>
+                                    <flux:label>Precio venta *</flux:label>
+                                    <flux:input type="number" name="precio_venta" value="{{ old('precio_venta', $producto->precio_venta) }}" min="0" step="0.01" required />
+                                    <flux:error name="precio_venta" />
+                                </flux:field>
+                            </div>
+
+                            <div class="flex gap-3 pt-2">
+                                <button type="submit" form="form-datos" class="inline-flex items-center gap-2 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">
+                                    Guardar cambios
+                                </button>
+                                <flux:button href="{{ route('admin.productos.index') }}" variant="ghost" wire:navigate>Cancelar</flux:button>
+                            </div>
                         </div>
-
-                        <div class="flex gap-3 pt-2">
-                            <flux:button type="submit" variant="primary">Guardar cambios</flux:button>
-                            <flux:button href="{{ route('admin.productos.index') }}" variant="ghost" wire:navigate>Cancelar</flux:button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            {{-- Columna lateral --}}
-            <div class="w-80 shrink-0 space-y-4">
-
-                {{-- Publicación --}}
-                <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-4">
-                    <flux:heading size="sm">Publicación</flux:heading>
-                    <flux:field>
-                        <flux:label>Estado</flux:label>
-                        <flux:select name="estado" form="form-datos">
-                            <flux:select.option value="1" :selected="old('estado', $producto->estado) == 1">Activo</flux:select.option>
-                            <flux:select.option value="0" :selected="old('estado', $producto->estado) == 0">Inactivo</flux:select.option>
-                        </flux:select>
-                    </flux:field>
-                    <flux:field>
-                        <flux:label>Destacado</flux:label>
-                        <flux:select name="destacado" form="form-datos">
-                            <flux:select.option value="0" :selected="old('destacado', $producto->destacado) == 0">No</flux:select.option>
-                            <flux:select.option value="1" :selected="old('destacado', $producto->destacado) == 1">Sí</flux:select.option>
-                        </flux:select>
-                    </flux:field>
+                    </form>
                 </div>
 
-                {{-- Galería --}}
+                {{-- Columna lateral --}}
+                <div class="w-80 shrink-0 space-y-4">
+
+                    {{-- Publicación --}}
+                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-4">
+                        <flux:heading size="sm">Publicación</flux:heading>
+                        <flux:field>
+                            <flux:label>Estado</flux:label>
+                            <flux:select name="estado" form="form-datos">
+                                <flux:select.option value="1" :selected="old('estado', $producto->estado) == 1">Activo</flux:select.option>
+                                <flux:select.option value="0" :selected="old('estado', $producto->estado) == 0">Inactivo</flux:select.option>
+                            </flux:select>
+                        </flux:field>
+                        <flux:field>
+                            <flux:label>Destacado</flux:label>
+                            <flux:select name="destacado" form="form-datos">
+                                <flux:select.option value="0" :selected="old('destacado', $producto->destacado) == 0">No</flux:select.option>
+                                <flux:select.option value="1" :selected="old('destacado', $producto->destacado) == 1">Sí</flux:select.option>
+                            </flux:select>
+                        </flux:field>
+                    </div>
+
+                    {{-- Categorías --}}
+                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
+                        <flux:heading size="sm">Categorías</flux:heading>
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
+                            @foreach($categorias as $categoria)
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <flux:checkbox
+                                        name="categorias[]"
+                                        value="{{ $categoria->id }}"
+                                        :checked="in_array($categoria->id, old('categorias', $categoriasActivas))"
+                                        form="form-datos"
+                                    />
+                                    <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $categoria->titulo }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <flux:error name="categorias" />
+                    </div>
+
+                    {{-- Flores --}}
+                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
+                        <flux:heading size="sm">Flores incluidas</flux:heading>
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
+                            @foreach($flores as $flor)
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <flux:checkbox
+                                        name="flores[]"
+                                        value="{{ $flor->id }}"
+                                        :checked="in_array($flor->id, old('flores', $floresActivas))"
+                                        form="form-datos"
+                                    />
+                                    <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $flor->nombre }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <flux:error name="flores" />
+                    </div>
+
+                    {{-- Info --}}
+                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
+                        <flux:heading size="sm">Información</flux:heading>
+                        <div>
+                            <flux:text class="text-xs text-zinc-400 uppercase tracking-wide">Slug</flux:text>
+                            <p class="text-xs font-mono text-zinc-500 mt-0.5 break-all">/{{ $producto->slug }}</p>
+                        </div>
+                        <div>
+                            <flux:text class="text-xs text-zinc-400 uppercase tracking-wide">Actualizado</flux:text>
+                            <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">{{ $producto->updated_at->format('d M Y, H:i') }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Ver en sitio --}}
+                    <flux:button
+                        href="{{ route('productos.show', $producto) }}"
+                        variant="ghost"
+                        icon="arrow-top-right-on-square"
+                        class="w-full"
+                        target="_blank"
+                    >
+                        Ver en el sitio
+                    </flux:button>
+
+                </div>
+            </div>
+        </div>
+
+        {{-- ══════════════════════════════════════
+             TAB: GALERÍA
+             ══════════════════════════════════════ --}}
+        <div x-show="tab === 'galeria'" x-cloak>
+            <div class="max-w-2xl">
                 <div
-                    class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-4"
+                    class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 space-y-5"
                     x-data="galeriaUploader({
                         uploadUrl: '{{ route('admin.productos.galeria.store', $producto) }}',
                         csrfToken: '{{ csrf_token() }}',
@@ -137,7 +250,7 @@
                     </div>
 
                     {{-- Grid de imágenes --}}
-                    <div class="grid grid-cols-3 gap-2" x-show="imagenes.length > 0">
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3" x-show="imagenes.length > 0">
                         <template x-for="img in imagenes" :key="img.id">
                             <div class="relative group">
                                 <img
@@ -161,9 +274,9 @@
                     {{-- Empty state --}}
                     <div
                         x-show="imagenes.length === 0"
-                        class="flex flex-col items-center justify-center py-6 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-center"
+                        class="flex flex-col items-center justify-center py-12 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-center"
                     >
-                        <flux:icon name="photo" class="size-8 text-zinc-300 mb-1" />
+                        <flux:icon name="photo" class="size-10 text-zinc-300 mb-2" />
                         <flux:text class="text-sm text-zinc-400">Sin imágenes aún.</flux:text>
                     </div>
 
@@ -172,8 +285,8 @@
                         @dragover.prevent="drag = true"
                         @dragleave.prevent="drag = false"
                         @drop.prevent="drop($event)"
-                        :class="drag ? 'border-primary bg-primary/5' : 'border-zinc-300 dark:border-zinc-600 hover:border-zinc-400'"
-                        class="rounded-lg border-2 border-dashed p-4 transition-colors cursor-pointer text-center"
+                        :class="drag ? 'border-zinc-500 bg-zinc-50 dark:bg-zinc-800' : 'border-zinc-300 dark:border-zinc-600 hover:border-zinc-400'"
+                        class="rounded-lg border-2 border-dashed p-6 transition-colors cursor-pointer text-center"
                         @click="$refs.fileInput.click()"
                     >
                         <input
@@ -184,136 +297,596 @@
                             class="sr-only"
                             @change="subir($event.target.files)"
                         />
-                        <flux:icon name="arrow-up-tray" class="size-6 text-zinc-400 mx-auto mb-1" />
-                        <p class="text-xs text-zinc-500">Arrastra o haz clic · las imágenes se suben automáticamente</p>
+                        <flux:icon name="arrow-up-tray" class="size-7 text-zinc-400 mx-auto mb-2" />
+                        <p class="text-sm text-zinc-500">Arrastra imágenes aquí o haz clic para seleccionar</p>
+                        <p class="text-xs text-zinc-400 mt-1">Las imágenes se suben automáticamente</p>
                     </div>
 
-                    {{-- Error de subida --}}
                     <p x-show="error" x-text="error" class="text-xs text-red-500"></p>
                 </div>
-
-                {{-- Categorías --}}
-                <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
-                    <flux:heading size="sm">Categorías</flux:heading>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        @foreach($categorias as $categoria)
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <flux:checkbox
-                                    name="categorias[]"
-                                    value="{{ $categoria->id }}"
-                                    :checked="in_array($categoria->id, old('categorias', $categoriasActivas))"
-                                    form="form-datos"
-                                />
-                                <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $categoria->titulo }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                    <flux:error name="categorias" />
-                </div>
-
-                {{-- Flores --}}
-                <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
-                    <flux:heading size="sm">Flores incluidas</flux:heading>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        @foreach($flores as $flor)
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <flux:checkbox
-                                    name="flores[]"
-                                    value="{{ $flor->id }}"
-                                    :checked="in_array($flor->id, old('flores', $floresActivas))"
-                                    form="form-datos"
-                                />
-                                <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $flor->nombre }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                    <flux:error name="flores" />
-                </div>
-
-                {{-- Info --}}
-                <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
-                    <flux:heading size="sm">Información</flux:heading>
-                    <div>
-                        <flux:text class="text-xs text-zinc-400 uppercase tracking-wide">Slug</flux:text>
-                        <p class="text-xs font-mono text-zinc-500 mt-0.5 break-all">/{{ $producto->slug }}</p>
-                    </div>
-                    <div>
-                        <flux:text class="text-xs text-zinc-400 uppercase tracking-wide">Actualizado</flux:text>
-                        <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">{{ $producto->updated_at->format('d M Y, H:i') }}</p>
-                    </div>
-                </div>
-
-                {{-- Ver en sitio --}}
-                <flux:button
-                    href="{{ route('productos.show', $producto) }}"
-                    variant="ghost"
-                    icon="arrow-top-right-on-square"
-                    class="w-full"
-                    target="_blank"
-                >
-                    Ver en el sitio
-                </flux:button>
-
             </div>
         </div>
 
-    </div>
+        {{-- ══════════════════════════════════════
+             TAB: TIPOS Y OPCIONES  +  COMBINACIONES
+             (comparten el mismo Alpine component)
+             ══════════════════════════════════════ --}}
+        <div
+            x-show="tab === 'tipos' || tab === 'combinaciones'"
+            x-cloak
+            x-data="variacionesManager({
+                urlIndex:      '{{ route('admin.productos.variaciones.index',   $producto) }}',
+                urlTipoStore:  '{{ route('admin.productos.variaciones.tipos.store',   $producto) }}',
+                urlSkuStore:   '{{ route('admin.productos.variaciones.skus.store',    $producto) }}',
+                urlSkuGenerar: '{{ route('admin.productos.variaciones.skus.generar',  $producto) }}',
+                urlDefaults:   '{{ route('admin.variaciones-defaults.index') }}',
+                csrfToken:     '{{ csrf_token() }}',
+            })"
+            x-init="init()"
+            class="space-y-6"
+        >
+            {{-- Loading --}}
+            <div x-show="cargando" class="flex items-center gap-2 py-12 justify-center text-zinc-400">
+                <svg class="animate-spin size-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                <span class="text-sm">Cargando variaciones…</span>
+            </div>
 
-    @push('scripts')
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const container = document.getElementById('editor-detalles-container');
-        if (!container) return;
+            {{-- Error global --}}
+            <div
+                x-show="errorGlobal"
+                x-text="errorGlobal"
+                class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+            ></div>
 
-        const script = document.createElement('script');
-        script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
-        script.onload = () => {
-            const link = document.createElement('link');
-            link.rel  = 'stylesheet';
-            link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
-            document.head.appendChild(link);
+            {{-- ── TIPOS Y OPCIONES ── --}}
+            <div x-show="!cargando && $root.closest('[x-data]')" style="display:none"
+                x-effect="$el.style.display = (!cargando && tab === 'tipos') ? 'block' : 'none'">
+                <div class="space-y-4">
 
-            const {
-                ClassicEditor,
-                Essentials,
-                Bold,
-                Italic,
-                Link,
-                Paragraph,
-                Heading,
-                List,
-                BlockQuote,
-                Indent,
-                IndentBlock,
-                Undo,
-            } = CKEDITOR;
+                    {{-- Importar desde defaults --}}
+                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <flux:heading size="sm">Importar del catálogo</flux:heading>
+                            <button
+                                type="button"
+                                @click="mostrarDefaults = !mostrarDefaults"
+                                class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline"
+                            >
+                                <span x-text="mostrarDefaults ? 'Ocultar' : 'Ver catálogo'"></span>
+                            </button>
+                        </div>
+                        <div x-show="mostrarDefaults" class="space-y-2">
+                            <template x-if="defaults.length === 0">
+                                <flux:text class="text-sm text-zinc-400">El catálogo está vacío.</flux:text>
+                            </template>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <template x-for="def in defaults" :key="def.id">
+                                    <button
+                                        type="button"
+                                        @click="importarDefault(def)"
+                                        class="flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-left hover:border-zinc-400 transition-colors"
+                                    >
+                                        <flux:icon name="plus" class="size-3.5 text-zinc-400 shrink-0" />
+                                        <span x-text="def.nombre" class="truncate"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
 
-            ClassicEditor
-                .create(container, {
-                    plugins: [
-                        Essentials, Bold, Italic, Link, Paragraph,
-                        Heading, List, BlockQuote, Indent, IndentBlock, Undo,
-                    ],
-                    toolbar: [
-                        'heading', '|',
-                        'bold', 'italic', 'link', '|',
-                        'bulletedList', 'numberedList', 'blockQuote', '|',
-                        'indent', 'outdent', '|',
-                        'undo', 'redo',
-                    ],
-                    initialData: document.getElementById('editor-detalles').value,
-                })
-                .then(editor => {
-                    const form = document.getElementById('form-datos') ?? document.querySelector('form');
-                    form.addEventListener('submit', () => {
-                        document.getElementById('editor-detalles').value = editor.getData();
-                    });
-                })
-                .catch(err => console.error('CKEditor error:', err));
-        };
-        document.head.appendChild(script);
-    });
-    </script>
-    @endpush
+                    {{-- Agregar tipo manual --}}
+                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-3">
+                        <flux:heading size="sm">Agregar tipo personalizado</flux:heading>
+                        <div class="flex gap-2">
+                            <flux:input
+                                x-model="nuevoTipo"
+                                placeholder="Ej. Tamaño del arreglo"
+                                class="flex-1"
+                                @keydown.enter.prevent="agregarTipo()"
+                            />
+                            <button
+                                type="button"
+                                @click="agregarTipo()"
+                                :disabled="!nuevoTipo.trim() || guardando"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+                            >
+                                <flux:icon name="plus" class="size-4" />
+                                Agregar
+                            </button>
+                        </div>
+                        <p x-show="errorTipo" x-text="errorTipo" class="text-xs text-red-500"></p>
+                    </div>
+
+                    {{-- Empty state tipos --}}
+                    <template x-if="tipos.length === 0">
+                        <div class="flex flex-col items-center justify-center py-12 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-center">
+                            <flux:icon name="tag" class="size-10 text-zinc-300 mb-2" />
+                            <flux:text class="text-zinc-400 text-sm">Sin tipos de variación. Agrega uno arriba.</flux:text>
+                        </div>
+                    </template>
+
+                    {{-- Lista de tipos --}}
+                    <template x-for="tipo in tipos" :key="tipo.id">
+                        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden">
+
+                            {{-- Header tipo --}}
+                            <div class="flex items-center gap-3 px-5 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700">
+                                <flux:icon name="bars-3" class="size-4 text-zinc-400 shrink-0" />
+
+                                <div class="flex-1 flex items-center gap-2">
+                                    <template x-if="!tipo._editando">
+                                        <span class="font-medium text-sm text-zinc-800 dark:text-zinc-200" x-text="tipo.nombre"></span>
+                                    </template>
+                                    <template x-if="tipo._editando">
+                                        <input
+                                            type="text"
+                                            x-model="tipo._nombreTemp"
+                                            @keydown.enter="guardarNombreTipo(tipo)"
+                                            @keydown.escape="tipo._editando = false"
+                                            class="flex-1 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                        />
+                                    </template>
+                                </div>
+
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <template x-if="!tipo._editando">
+                                        <button type="button"
+                                            @click="tipo._editando = true; tipo._nombreTemp = tipo.nombre"
+                                            class="p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 transition-colors">
+                                            <flux:icon name="pencil" class="size-3.5" />
+                                        </button>
+                                    </template>
+                                    <template x-if="tipo._editando">
+                                        <button type="button"
+                                            @click="guardarNombreTipo(tipo)"
+                                            class="p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-green-500 transition-colors">
+                                            <flux:icon name="check" class="size-3.5" />
+                                        </button>
+                                    </template>
+                                    <button type="button"
+                                        @click="eliminarTipo(tipo)"
+                                        class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-400 hover:text-red-500 transition-colors">
+                                        <flux:icon name="trash" class="size-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Opciones --}}
+                            <div class="p-5 space-y-3">
+                                <div class="space-y-2">
+                                    <template x-if="tipo.opciones.length === 0">
+                                        <flux:text class="text-xs text-zinc-400">Sin opciones aún.</flux:text>
+                                    </template>
+                                    <template x-for="opcion in tipo.opciones" :key="opcion.id">
+                                        <div class="flex items-center gap-2 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-2">
+
+                                            <div class="shrink-0">
+                                                <template x-if="opcion.imagen">
+                                                    <img :src="opcion.imagen" class="size-7 rounded-full object-cover ring-1 ring-zinc-200 dark:ring-zinc-700" />
+                                                </template>
+                                                <template x-if="!opcion.imagen">
+                                                    <div class="size-7 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+                                                        <flux:icon name="photo" class="size-3.5 text-zinc-400" />
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <template x-if="!opcion._editando">
+                                                <span class="flex-1 text-sm text-zinc-700 dark:text-zinc-300" x-text="opcion.nombre"></span>
+                                            </template>
+                                            <template x-if="opcion._editando">
+                                                <input
+                                                    type="text"
+                                                    x-model="opcion._nombreTemp"
+                                                    @keydown.enter="guardarNombreOpcion(tipo, opcion)"
+                                                    @keydown.escape="opcion._editando = false"
+                                                    class="flex-1 rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                                />
+                                            </template>
+
+                                            <div class="flex items-center gap-1 shrink-0">
+                                                <label class="p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer" title="Subir imagen">
+                                                    <flux:icon name="photo" class="size-3.5" />
+                                                    <input type="file" accept="image/*" class="sr-only" @change="subirImagenOpcion(tipo, opcion, $event)" />
+                                                </label>
+                                                <template x-if="!opcion._editando">
+                                                    <button type="button"
+                                                        @click="opcion._editando = true; opcion._nombreTemp = opcion.nombre"
+                                                        class="p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 transition-colors">
+                                                        <flux:icon name="pencil" class="size-3.5" />
+                                                    </button>
+                                                </template>
+                                                <template x-if="opcion._editando">
+                                                    <button type="button"
+                                                        @click="guardarNombreOpcion(tipo, opcion)"
+                                                        class="p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-green-500 transition-colors">
+                                                        <flux:icon name="check" class="size-3.5" />
+                                                    </button>
+                                                </template>
+                                                <button type="button"
+                                                    @click="eliminarOpcion(tipo, opcion)"
+                                                    class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-400 hover:text-red-500 transition-colors">
+                                                    <flux:icon name="trash" class="size-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                {{-- Agregar opción --}}
+                                <div class="flex gap-2 pt-1">
+                                    <flux:input
+                                        x-model="tipo._nuevaOpcion"
+                                        ::placeholder="'Nueva opción de ' + tipo.nombre.toLowerCase()"
+                                        class="flex-1 text-sm"
+                                        @keydown.enter.prevent="agregarOpcion(tipo)"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="agregarOpcion(tipo)"
+                                        :disabled="!tipo._nuevaOpcion || !tipo._nuevaOpcion.trim() || guardando"
+                                        class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 disabled:opacity-40 hover:bg-zinc-50 transition-colors"
+                                    >
+                                        <flux:icon name="plus" class="size-3.5" />
+                                        Opción
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            {{-- ── COMBINACIONES ── --}}
+            <div style="display:none"
+                x-effect="$el.style.display = (!cargando && tab === 'combinaciones') ? 'block' : 'none'">
+                <div class="space-y-4">
+
+                    {{-- Acciones --}}
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-zinc-500">
+                            <span x-text="skus.length"></span> combinaciones ·
+                            <span x-text="skus.filter(s => s.estado).length"></span> activas
+                        </flux:text>
+                        <button
+                            type="button"
+                            @click="generarSkus()"
+                            :disabled="tipos.length === 0 || guardando"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+                        >
+                            <flux:icon name="sparkles" class="size-4" />
+                            <span x-text="skus.length > 0 ? 'Generar faltantes' : 'Generar todas'"></span>
+                        </button>
+                    </div>
+
+                    {{-- Mensaje generar --}}
+                    <div
+                        x-show="mensajeGenerar"
+                        x-text="mensajeGenerar"
+                        class="rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 px-4 py-3 text-sm text-green-700 dark:text-green-400"
+                    ></div>
+
+                    {{-- Empty state --}}
+                    <template x-if="skus.length === 0">
+                        <div class="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-center">
+                            <flux:icon name="squares-2x2" class="size-10 text-zinc-300 mb-2" />
+                            <flux:text class="text-zinc-500 text-sm font-medium">Sin combinaciones aún</flux:text>
+                            <flux:text class="text-zinc-400 text-xs mt-1">Define los tipos y opciones, luego genera las combinaciones.</flux:text>
+                        </div>
+                    </template>
+
+                    {{-- Tabla SKUs --}}
+                    <template x-if="skus.length > 0">
+                        <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                            <table class="w-full text-sm">
+                                <thead class="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Combinación</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide w-32">Precio lista</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide w-32">Precio venta</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-zinc-500 uppercase tracking-wide w-20">Imagen</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-zinc-500 uppercase tracking-wide w-20">Activa</th>
+                                        <th class="px-4 py-3 w-12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                    <template x-for="sku in skus" :key="sku.id">
+                                        <tr :class="!sku.estado ? 'opacity-50' : ''" class="transition-opacity">
+
+                                            <td class="px-4 py-3">
+                                                <div class="font-medium text-zinc-800 dark:text-zinc-200" x-text="sku.label"></div>
+                                                <div x-show="sku.notas" x-text="sku.notas" class="text-xs text-zinc-400 mt-0.5"></div>
+                                            </td>
+
+                                            <td class="px-4 py-3">
+                                                <input
+                                                    type="number"
+                                                    x-model="sku._precioLista"
+                                                    min="0" step="0.01"
+                                                    placeholder="—"
+                                                    @change="actualizarSku(sku)"
+                                                    class="w-28 rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                                />
+                                            </td>
+
+                                            <td class="px-4 py-3">
+                                                <input
+                                                    type="number"
+                                                    x-model="sku._precioVenta"
+                                                    min="0" step="0.01"
+                                                    @change="actualizarSku(sku)"
+                                                    class="w-28 rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                                />
+                                            </td>
+
+                                            <td class="px-4 py-3 text-center">
+                                                <label ::for="'img-sku-' + sku.id" class="cursor-pointer inline-block">
+                                                    <template x-if="sku.imagen">
+                                                        <img :src="sku.imagen" class="size-9 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-700 mx-auto hover:opacity-80 transition-opacity" />
+                                                    </template>
+                                                    <template x-if="!sku.imagen">
+                                                        <div class="size-9 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto ring-1 ring-zinc-200 dark:ring-zinc-700 hover:bg-zinc-200 transition-colors">
+                                                            <flux:icon name="photo" class="size-4 text-zinc-400" />
+                                                        </div>
+                                                    </template>
+                                                    <input ::id="'img-sku-' + sku.id" type="file" accept="image/*" class="sr-only" @change="subirImagenSku(sku, $event)" />
+                                                </label>
+                                            </td>
+
+                                            <td class="px-4 py-3 text-center">
+                                                <button
+                                                    type="button"
+                                                    @click="toggleEstadoSku(sku)"
+                                                    :class="sku.estado ? 'bg-green-500 hover:bg-green-600' : 'bg-zinc-300 dark:bg-zinc-600 hover:bg-zinc-400'"
+                                                    class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200"
+                                                >
+                                                    <span
+                                                        :class="sku.estado ? 'translate-x-4' : 'translate-x-0.5'"
+                                                        class="inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transform transition-transform duration-200"
+                                                    ></span>
+                                                </button>
+                                            </td>
+
+                                            <td class="px-4 py-3 text-center">
+                                                <button type="button"
+                                                    @click="eliminarSku(sku)"
+                                                    class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-400 hover:text-red-500 transition-colors">
+                                                    <flux:icon name="trash" class="size-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+        </div>{{-- fin variacionesManager --}}
+
+    </div>{{-- fin tab container --}}
+
+</div>
+
+<style>
+[x-cloak] { display: none !important; }
+</style>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('variacionesManager', (config) => ({
+
+        cargando:        true,
+        guardando:       false,
+        tipos:           [],
+        skus:            [],
+        defaults:        [],
+        nuevoTipo:       '',
+        mostrarDefaults: false,
+        errorTipo:       '',
+        errorGlobal:     '',
+        mensajeGenerar:  '',
+
+        async init() {
+            await Promise.all([this.cargarDatos(), this.cargarDefaults()]);
+            this.cargando = false;
+        },
+
+        async cargarDatos() {
+            const res  = await fetch(config.urlIndex, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            this.aplicarPayload(data);
+        },
+
+        async cargarDefaults() {
+            const res  = await fetch(config.urlDefaults, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            this.defaults = data.tipos ?? [];
+        },
+
+        aplicarPayload(data) {
+            this.tipos = (data.tipos ?? []).map(t => ({
+                ...t,
+                _editando:    false,
+                _nombreTemp:  '',
+                _nuevaOpcion: '',
+                opciones: (t.opciones ?? []).map(o => ({
+                    ...o,
+                    _editando:   false,
+                    _nombreTemp: '',
+                })),
+            }));
+            this.skus = (data.skus ?? []).map(s => ({
+                ...s,
+                _precioVenta: s.precio_venta,
+                _precioLista: s.precio_lista ?? '',
+            }));
+        },
+
+        async api(url, method = 'GET', body = null) {
+            this.guardando   = true;
+            this.errorGlobal = '';
+            try {
+                const opts = {
+                    method,
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                };
+                if (body instanceof FormData) {
+                    opts.body = body;
+                } else if (body) {
+                    opts.headers['Content-Type'] = 'application/json';
+                    opts.body = JSON.stringify(body);
+                }
+                const res  = await fetch(url, opts);
+                const data = await res.json();
+                if (!res.ok) { this.errorGlobal = data.message ?? 'Error en la solicitud.'; return null; }
+                return data;
+            } catch (e) {
+                this.errorGlobal = 'Error de conexión.';
+                return null;
+            } finally {
+                this.guardando = false;
+            }
+        },
+
+        urlBase()              { return config.urlTipoStore.replace('/tipos', ''); },
+        urlTipo(tipo)          { return `${this.urlBase()}/tipos/${tipo.id}`; },
+        urlOpcionStore(tipo)   { return `${this.urlBase()}/tipos/${tipo.id}/opciones`; },
+        urlOpcion(opcion)      { return `${this.urlBase()}/opciones/${opcion.id}`; },
+        urlSku(sku)            { return `${config.urlSkuStore}/${sku.id}`; },
+        urlSkuImagen(sku)      { return `${config.urlSkuStore}/${sku.id}/imagen`; },
+
+        // ── Defaults ──────────────────────────────────────────────────────────
+        async importarDefault(def) {
+            const data = await this.api(config.urlTipoStore, 'POST', { nombre: def.nombre, id_tipo_default: def.id });
+            if (!data) return;
+
+            const tipo = { ...data.tipo, _editando: false, _nombreTemp: '', _nuevaOpcion: '', opciones: [] };
+
+            for (const opDef of (def.opciones ?? [])) {
+                const opData = await this.api(this.urlOpcionStore(tipo), 'POST', { nombre: opDef.nombre, id_opcion_default: opDef.id });
+                if (opData) tipo.opciones.push({ ...opData.opcion, _editando: false, _nombreTemp: '' });
+            }
+
+            this.tipos.push(tipo);
+        },
+
+        // ── Tipos ─────────────────────────────────────────────────────────────
+        async agregarTipo() {
+            this.errorTipo = '';
+            if (!this.nuevoTipo.trim()) return;
+            const data = await this.api(config.urlTipoStore, 'POST', { nombre: this.nuevoTipo.trim() });
+            if (!data) return;
+            this.tipos.push({ ...data.tipo, _editando: false, _nombreTemp: '', _nuevaOpcion: '', opciones: [] });
+            this.nuevoTipo = '';
+        },
+
+        async guardarNombreTipo(tipo) {
+            if (!tipo._nombreTemp.trim()) return;
+            const data = await this.api(this.urlTipo(tipo), 'PATCH', { nombre: tipo._nombreTemp.trim() });
+            if (!data) return;
+            tipo.nombre    = data.nombre;
+            tipo._editando = false;
+        },
+
+        async eliminarTipo(tipo) {
+            if (!confirm(`¿Eliminar el tipo "${tipo.nombre}" y todas sus opciones? Se eliminarán también las combinaciones afectadas.`)) return;
+            const data = await this.api(this.urlTipo(tipo), 'DELETE');
+            if (!data) return;
+            this.aplicarPayload(data.payload);
+        },
+
+        // ── Opciones ──────────────────────────────────────────────────────────
+        async agregarOpcion(tipo) {
+            if (!tipo._nuevaOpcion || !tipo._nuevaOpcion.trim()) return;
+            const data = await this.api(this.urlOpcionStore(tipo), 'POST', { nombre: tipo._nuevaOpcion.trim() });
+            if (!data) return;
+            tipo.opciones.push({ ...data.opcion, _editando: false, _nombreTemp: '' });
+            tipo._nuevaOpcion = '';
+        },
+
+        async guardarNombreOpcion(tipo, opcion) {
+            if (!opcion._nombreTemp.trim()) return;
+            const data = await this.api(this.urlOpcion(opcion), 'PATCH', { nombre: opcion._nombreTemp.trim() });
+            if (!data) return;
+            opcion.nombre    = data.opcion.nombre;
+            opcion._editando = false;
+        },
+
+        async eliminarOpcion(tipo, opcion) {
+            if (!confirm(`¿Eliminar la opción "${opcion.nombre}"? Se eliminarán las combinaciones que la usen.`)) return;
+            const data = await this.api(this.urlOpcion(opcion), 'DELETE');
+            if (!data) return;
+            this.aplicarPayload(data.payload);
+        },
+
+        async subirImagenOpcion(tipo, opcion, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const form = new FormData();
+            form.append('imagen',  file);
+            form.append('nombre',  opcion.nombre);
+            form.append('_method', 'PATCH');
+            const data = await this.api(this.urlOpcion(opcion), 'POST', form);
+            if (!data) return;
+            opcion.imagen = data.opcion.imagen;
+        },
+
+        // ── SKUs ──────────────────────────────────────────────────────────────
+        async generarSkus() {
+            this.mensajeGenerar = '';
+            const data = await this.api(config.urlSkuGenerar, 'POST');
+            if (!data) return;
+            if (!data.ok) { this.errorGlobal = data.message; return; }
+            this.mensajeGenerar = data.creados > 0
+                ? `Se generaron ${data.creados} combinaciones nuevas.`
+                : 'Todas las combinaciones posibles ya existen.';
+            this.aplicarPayload(data.payload);
+            setTimeout(() => { this.mensajeGenerar = ''; }, 4000);
+        },
+
+        async actualizarSku(sku) {
+            await this.api(this.urlSku(sku), 'PATCH', {
+                precio_venta: sku._precioVenta,
+                precio_lista: sku._precioLista || null,
+                estado:       sku.estado,
+                notas:        sku.notas,
+            });
+        },
+
+        async toggleEstadoSku(sku) {
+            const data = await this.api(this.urlSku(sku), 'PATCH', {
+                precio_venta: sku._precioVenta,
+                precio_lista: sku._precioLista || null,
+                estado:       !sku.estado,
+                notas:        sku.notas,
+            });
+            if (!data) return;
+            sku.estado = data.sku.estado;
+        },
+
+        async eliminarSku(sku) {
+            if (!confirm(`¿Eliminar la combinación "${sku.label}"?`)) return;
+            const data = await this.api(this.urlSku(sku), 'DELETE');
+            if (!data) return;
+            this.skus = this.skus.filter(s => s.id !== sku.id);
+        },
+
+        async subirImagenSku(sku, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const form = new FormData();
+            form.append('imagen', file);
+            const data = await this.api(this.urlSkuImagen(sku), 'POST', form);
+            if (!data) return;
+            sku.imagen = data.url;
+        },
+    }));
+});
+</script>
 
 </x-layouts::app>

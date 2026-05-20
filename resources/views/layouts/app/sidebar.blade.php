@@ -37,6 +37,14 @@
                     {{ __('Páginas') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
+                <flux:sidebar.group :heading="__('Tienda')" class="grid">
+                    <flux:sidebar.item icon="shopping-cart" :href="route('admin.pedidos.index')" :current="request()->routeIs('admin.pedidos.*')" wire:navigate>
+                        {{ __('Pedidos') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="map-pin" :href="route('admin.zonas-envio.index')" :current="request()->routeIs('admin.zonas-envio.*')" wire:navigate>
+                        {{ __('Zonas de envío') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
         </flux:sidebar.nav>
 
             <flux:spacer />

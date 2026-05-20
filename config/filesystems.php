@@ -40,7 +40,7 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => '/home2/quarkser/1310/storage/app/public',
+            'root' => env('FILESYSTEM_PUBLIC_ROOT', storage_path('app/public')),
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
@@ -73,8 +73,10 @@ return [
     |
     */
 
+    
+
     'links' => [
-        '/home2/quarkser/public_html/website_18cc02dc/storage' => '/home2/quarkser/1310/storage/app/public',
+        env('FILESYSTEM_PUBLIC_LINK', public_path('storage')) => env('FILESYSTEM_PUBLIC_ROOT', storage_path('app/public')),
     ],
 
 ];

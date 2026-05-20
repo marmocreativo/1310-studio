@@ -29,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
         }
+
+        if (request()->hasHeader('X-Forwarded-Host')) {
+            URL::forceRootUrl(config('app.url'));
+        }
     }
 
     /**
@@ -37,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        \Carbon\Carbon::setLocale('es');
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
