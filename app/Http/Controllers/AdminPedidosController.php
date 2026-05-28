@@ -44,7 +44,7 @@ class AdminPedidosController extends Controller
 
     public function show(Pedido $pedido)
     {
-        $pedido->load(['items.producto.galeria', 'items.sku', 'zona', 'pagos', 'usuario']);
+        $pedido->load(['items.producto.galeria', 'items.sku', 'zona', 'pagos', 'usuario', 'municipio']);
 
         return view('pages.admin.pedidos.show', compact('pedido'));
     }

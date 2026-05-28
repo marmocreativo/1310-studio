@@ -25,6 +25,8 @@ use App\Http\Controllers\AdminSlidesController;
 use App\Http\Controllers\DireccionesController;
 use App\Http\Controllers\CuentaController;
 use App\Http\Controllers\PedidoPublicoController;
+use App\Http\Controllers\AdminUsuariosController;
+use App\Http\Controllers\AdminConfiguracionesController;
 
 
 
@@ -40,6 +42,16 @@ Route::prefix('admin')
         // Slides Hero
         Route::post('slides/orden', [AdminSlidesController::class, 'orden'])->name('slides.orden');
         Route::resource('slides', AdminSlidesController::class);
+
+        // Configuraciones
+        Route::get('configuraciones', [AdminConfiguracionesController::class, 'index'])->name('configuraciones.index');
+        Route::post('configuraciones', [AdminConfiguracionesController::class, 'store'])->name('configuraciones.store');
+        Route::patch('configuraciones/{configuracion}', [AdminConfiguracionesController::class, 'update'])->name('configuraciones.update');
+        Route::delete('configuraciones/{configuracion}', [AdminConfiguracionesController::class, 'destroy'])->name('configuraciones.destroy');
+
+        // Usuarios
+        Route::patch('usuarios/{usuario}/toggle-rol', [AdminUsuariosController::class, 'toggleRol'])->name('usuarios.toggle-rol');
+        Route::resource('usuarios', AdminUsuariosController::class)->except(['create', 'store']);
 
         // Directorio Floral + Galería
         Route::post('directorio-floral/lote', [AdminDirectorioFloralController::class, 'lote'])->name('directorio-floral.lote');

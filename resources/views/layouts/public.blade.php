@@ -74,6 +74,7 @@
         {{-- ═══════════════════════════════════════════
              OFFCANVAS — Carrito (real)
         ════════════════════════════════════════════ --}}
+        @if($conf['activar_tienda'] ?? false)
         <aside id="cart-offcanvas"
                class="fixed top-0 right-0 h-full w-96 z-[100] bg-surface border-l border-outline-variant
                       translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
@@ -218,7 +219,7 @@
             </div>
 
         </aside>
-
+        @endif
         {{-- ═══════════════════════════════════════════
              HEADER
         ════════════════════════════════════════════ --}}
@@ -339,6 +340,7 @@
                     @endauth
 
                     {{-- Carrito --}}
+                    @if($conf['activar_tienda'] ?? false)
                     <button onclick="openCart()"
                             class="relative text-on-surface-variant hover:text-on-surface transition-colors duration-300"
                             aria-label="Carrito">
@@ -359,6 +361,7 @@
                             @carrito-actualizado.window="count = $event.detail.total_items">
                         </span>
                     </button>
+                    @endif
 
                 </div>
             </div>
@@ -423,20 +426,20 @@
                             <li class="flex items-start gap-2">
                                 <flux:icon name="map-pin" class="w-4 h-4 text-outline mt-0.5 shrink-0" />
                                 <span class="text-sm font-light text-on-surface-variant leading-snug">
-                                    Orizaba 78, Roma Norte<br>Cuauhtémoc, CDMX 06700
+                                    {!! nl2br(e($conf['direccion_contacto'] ?? 'Orizaba 78, Roma Norte')) !!}
                                 </span>
                             </li>
                             <li class="flex items-center gap-2">
                                 <flux:icon name="phone" class="w-4 h-4 text-outline shrink-0" />
-                                <span class="text-sm font-light text-on-surface-variant">+52 55 1234 5678</span>
+                                <span class="text-sm font-light text-on-surface-variant">{{ $conf['whatsapp_contacto'] ?? '' }}</span>
                             </li>
                             <li class="flex items-center gap-2">
                                 <flux:icon name="envelope" class="w-4 h-4 text-outline shrink-0" />
-                                <span class="text-sm font-light text-on-surface-variant">hola@1310studio.mx</span>
+                                <span class="text-sm font-light text-on-surface-variant">{{ $conf['email_contacto'] ?? '' }}</span>
                             </li>
                             <li class="flex items-center gap-2">
                                 <flux:icon name="clock" class="w-4 h-4 text-outline shrink-0" />
-                                <span class="text-sm font-light text-on-surface-variant">Lun–Vie 9:00–19:00 · Sáb 9:00–15:00</span>
+                                <span class="text-sm font-light text-on-surface-variant">{{ $conf['horario_contacto'] ?? '' }}</span>
                             </li>
                         </ul>
                     </div>
@@ -448,7 +451,7 @@
                 <div class="py-5 flex flex-col md:flex-row items-center justify-between gap-3">
                     <p class="flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase font-light text-outline">
                         <flux:icon name="map-pin" class="w-3.5 h-3.5" />
-                        Orizaba 78, Roma Norte, Cuauhtémoc, 06700 Ciudad de México, CDMX
+                        {{ $conf['direccion_contacto'] ?? '' }}
                     </p>
                     <div class="flex flex-wrap justify-center gap-4">
                         @foreach ([

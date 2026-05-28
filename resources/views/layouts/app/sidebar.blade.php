@@ -18,6 +18,9 @@
                 <flux:sidebar.item icon="home" :href="route('admin.dashboard')" :current="request()->routeIs('admin.dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="cog-6-tooth" :href="route('admin.configuraciones.index')" :current="request()->routeIs('admin.configuraciones.*')" wire:navigate>
+                    {{ __('Configuraciones') }}
+                </flux:sidebar.item>
             </flux:sidebar.group>
 
             <flux:sidebar.group :heading="__('Contenido')" class="grid">
@@ -48,6 +51,9 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="map-pin" :href="route('admin.zonas-envio.index')" :current="request()->routeIs('admin.zonas-envio.*')" wire:navigate>
                         {{ __('Zonas de envío') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="users" :href="route('admin.usuarios.index')" :current="request()->routeIs('admin.usuarios.*')" wire:navigate>
+                        {{ __('Usuarios') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
         </flux:sidebar.nav>

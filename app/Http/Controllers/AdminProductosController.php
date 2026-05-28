@@ -162,7 +162,7 @@ class AdminProductosController extends Controller
             'message' => 'Imágenes agregadas correctamente.',
             'galeria' => $producto->galeria()->get()->map(fn($img) => [
                 'id'     => $img->id,
-                'url'    => Storage::url($img->imagen),
+                'url' => Storage::disk('public')->url($img->imagen),
                 'orden'  => $img->orden,
                 'delete' => route('admin.productos.galeria.destroy', [$producto, $img]),
             ]),

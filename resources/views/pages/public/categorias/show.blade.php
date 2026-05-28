@@ -66,21 +66,23 @@
                             <h3 class="font-serif text-on-surface group-hover:text-primary transition-colors duration-300">
                                 {{ $producto->nombre }}
                             </h3>
-                            <div class="flex items-center gap-3 justify-center">
-                                @if ($producto->tiene_descuento)
-                                    <span class="text-sm text-outline line-through">
-                                        ${{ number_format($producto->precio_lista, 2) }}
+                            @if($conf['activar_tienda'] ?? false)
+                                <div class="flex items-center gap-3 justify-center">
+                                    @if ($producto->tiene_descuento)
+                                        <span class="text-sm text-outline line-through">
+                                            ${{ number_format($producto->precio_lista, 2) }}
+                                        </span>
+                                    @endif
+                                    <span class="text-sm font-medium text-on-surface">
+                                        ${{ number_format($producto->precio_venta, 2) }}
                                     </span>
-                                @endif
-                                <span class="text-sm font-medium text-on-surface">
-                                    ${{ number_format($producto->precio_venta, 2) }}
-                                </span>
-                                @if ($producto->tiene_descuento)
-                                    <span class="text-[10px] tracking-[0.1em] uppercase text-tertiary">
-                                        -{{ $producto->porcentaje_descuento }}%
-                                    </span>
-                                @endif
-                            </div>
+                                    @if ($producto->tiene_descuento)
+                                        <span class="text-[10px] tracking-[0.1em] uppercase text-tertiary">
+                                            -{{ $producto->porcentaje_descuento }}%
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </a>
                 @endforeach

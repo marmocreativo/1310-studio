@@ -59,22 +59,22 @@
             <div class="flex flex-col sm:flex-row items-center gap-6 mt-4 text-white/80 text-xs tracking-[0.1em]">
                 <div class="flex items-center gap-2">
                     <flux:icon name="map-pin" class="w-4 h-4 text-primary" />
-                    <span>Orizaba 78, Roma Norte · CDMX</span>
+                    <span>{{ $conf['direccion_contacto'] ?? '' }}</span>
                 </div>
                 <div class="hidden sm:block w-px h-4 bg-white/30"></div>
                 <div class="flex items-center gap-2">
                     <flux:icon name="clock" class="w-4 h-4 text-primary" />
-                    <span>Lun–Vie 9–19 · Sáb 9–15</span>
+                    <span>{{ $conf['horario_contacto'] ?? '' }}</span>
                 </div>
                 <div class="hidden sm:block w-px h-4 bg-white/30"></div>
                 <div class="flex items-center gap-2">
                     <flux:icon name="phone" class="w-4 h-4 text-primary" />
-                    <span>+52 55 1234 5678</span>
+                    <span>{{ $conf['whatsapp_contacto'] ?? '' }}</span>
                 </div>
             </div>
 
             {{-- CTA WhatsApp --}}
-            <a href="https://wa.me/5212345678?text={{ urlencode('Hola, quiero visitarlos. ¿Tienen disponibilidad hoy?') }}"
+            <a href="https://wa.me/{{ $conf['whatsapp_contacto'] ?? '' }}?text={{ urlencode('Hola, quiero visitarlos. ¿Tienen disponibilidad hoy?') }}"
                target="_blank"
                class="mt-4 inline-block bg-primary text-on-primary px-12 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-500">
                 Escribirnos por WhatsApp
@@ -188,26 +188,17 @@
 
             <div class="space-y-3">
                 <p class="text-[11px] tracking-[0.2em] uppercase text-on-surface-variant">Dirección</p>
-                <p class="font-serif text-2xl text-on-surface">Orizaba 78</p>
-                <p class="text-on-surface-variant font-light text-sm">Colonia Roma Norte, Cuauhtémoc</p>
-                <p class="text-on-surface-variant font-light text-sm">Ciudad de México, CDMX 06700</p>
+                <p class="text-on-surface-variant font-light text-sm leading-relaxed">
+                    {!! nl2br(e($conf['direccion_contacto'] ?? '')) !!}
+                </p>
             </div>
 
             <div class="space-y-3">
                 <p class="text-[11px] tracking-[0.2em] uppercase text-on-surface-variant">Horarios</p>
                 <div class="space-y-2">
-                    <div class="flex justify-between text-sm border-b border-outline-variant py-2">
-                        <span class="text-on-surface-variant font-light">Lunes – Viernes</span>
-                        <span class="text-on-surface">9:00 – 19:00</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-outline-variant py-2">
-                        <span class="text-on-surface-variant font-light">Sábado</span>
-                        <span class="text-on-surface">9:00 – 15:00</span>
-                    </div>
-                    <div class="flex justify-between text-sm py-2">
-                        <span class="text-on-surface-variant font-light">Domingo</span>
-                        <span class="text-on-surface-variant italic">Cerrado</span>
-                    </div>
+                    <p class="text-on-surface-variant font-light text-sm leading-relaxed">
+                        {!! nl2br(e($conf['horario_contacto'] ?? '')) !!}
+                    </p>
                 </div>
             </div>
 
@@ -216,15 +207,15 @@
                 <div class="space-y-3">
                     <div class="flex items-center gap-3">
                         <flux:icon name="phone" class="w-4 h-4 text-outline shrink-0" />
-                        <span class="text-on-surface-variant font-light text-sm">+52 55 1234 5678</span>
+                        <span class="text-on-surface-variant font-light text-sm">{{ $conf['whatsapp_contacto'] ?? '' }}</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <flux:icon name="envelope" class="w-4 h-4 text-outline shrink-0" />
-                        <span class="text-on-surface-variant font-light text-sm">hola@1310studio.mx</span>
+                        <span class="text-on-surface-variant font-light text-sm">{{ $conf['email_contacto'] ?? '' }}</span>
                     </div>
                 </div>
                 <div class="pt-2">
-                    <a href="https://wa.me/5212345678"
+                    <a href="https://wa.me/{{ $conf['whatsapp_contacto'] ?? '' }}"
                        target="_blank"
                        class="inline-block bg-primary text-on-primary px-8 py-3 text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300">
                         WhatsApp

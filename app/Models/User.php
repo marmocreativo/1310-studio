@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Pedido;
 use App\Models\DireccionUsuario;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -58,5 +59,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(DireccionUsuario::class, 'id_usuario')
                     ->where('predeterminada', true);
+    }
+
+    public function pedidos(): HasMany
+    {
+        return $this->hasMany(Pedido::class, 'id_usuario');
     }
 }

@@ -173,11 +173,14 @@
                                 {{ $pedido->zona?->nombre ?? '—' }}
                             </p>
                         </div>
-                        <div class="col-span-2">
+                        <di v class="col-span-2">
                             <flux:text class="text-xs text-zinc-400 uppercase tracking-wide">Dirección</flux:text>
                             <p class="text-sm text-zinc-700 dark:text-zinc-300 mt-0.5">
-                                {{ $pedido->direccion }}, {{ $pedido->colonia }},
-                                {{ $pedido->municipio }}
+                                {{ $pedido->calle }} {{ $pedido->numero_ext }}
+                                @if($pedido->numero_int) Int. {{ $pedido->numero_int }} @endif,
+                                {{ $pedido->colonia }},
+                                {{ $pedido->municipio?->nombre ?? '—' }},
+                                {{ $pedido->zona?->nombre ? '(' . $pedido->zona->nombre . ')' : '' }}
                                 {{ $pedido->cp ? 'CP ' . $pedido->cp : '' }}
                             </p>
                             @if($pedido->referencias)
@@ -352,7 +355,7 @@
             </div>
 
             {{-- WhatsApp --}}
-            
+            <a
                 href="https://wa.me/{{ preg_replace('/\D/', '', $pedido->telefono) }}?text={{ urlencode('Hola ' . $pedido->nombre . ', te contactamos de 1310 Studio sobre tu pedido ' . $pedido->numero . '.') }}"
                 target="_blank"
                 class="flex items-center justify-center gap-2 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 px-4 py-2.5 text-sm hover:border-zinc-400 transition-colors"

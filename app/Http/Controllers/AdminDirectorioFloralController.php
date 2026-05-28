@@ -148,7 +148,7 @@ class AdminDirectorioFloralController extends Controller
             'ok'      => true,
             'galeria' => $flor->galeria()->get()->map(fn($img) => [
                 'id'        => $img->id,
-                'url'       => Storage::url($img->imagen),
+                'url' => Storage::disk('public')->url($img->imagen),
                 'deleteUrl' => route('admin.directorio-floral.galeria.destroy', [$flor, $img]),
             ]),
         ]);

@@ -368,6 +368,11 @@
                         Si buscas opciones personalizadas de ramos o arreglos para eventos especiales,
                         ponte en contacto con nuestra tienda física.
                     </p>
+                    <a href="https://wa.me/{{ $conf['whatsapp_contacto'] ?? '' }}?text={{ urlencode('Hola, me gustaría recibir asesoría personalizada para un arreglo.') }}"
+                        target="_blank"
+                        class="inline-block bg-on-surface text-surface px-10 py-4 text-xs tracking-[0.2em] uppercase hover:opacity-80 transition-colors duration-300">
+                            Escribirnos por WhatsApp
+                    </a>
                 </div>
 
                 {{-- Newsletter --}}
@@ -380,18 +385,17 @@
                         Recibe inspiraciones sobre nuestro arte floral, lanzamientos exclusivos
                         y consejos para el cuidado de tus arreglos.
                     </p>
-                    <form class="flex flex-col sm:flex-row gap-4 pt-4 w-full max-w-md"
-                          x-data="{ email: '' }" @submit.prevent>
-                        <input
-                            type="email"
-                            x-model="email"
-                            placeholder="Tu correo electrónico"
-                            class="flex-1 bg-white border border-outline-variant px-6 py-4 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-outline">
-                        <button type="submit"
-                                class="bg-on-surface text-surface px-8 py-4 text-xs tracking-[0.2em] uppercase hover:opacity-80 transition-colors duration-300 whitespace-nowrap">
-                            SUSCRIBIRSE
-                        </button>
-                    </form>
+                    @auth
+                        <a href="{{ route('cuenta.dashboard') }}" wire:navigate
+                        class="inline-block bg-on-surface text-surface px-10 py-4 text-xs tracking-[0.2em] uppercase hover:opacity-80 transition-colors duration-300">
+                            Mi cuenta
+                        </a>
+                    @else
+                        <a href="{{ route('register') }}" wire:navigate
+                        class="inline-block bg-on-surface text-surface px-10 py-4 text-xs tracking-[0.2em] uppercase hover:opacity-80 transition-colors duration-300">
+                            Crear una cuenta
+                        </a>
+                    @endauth
                 </div>
 
             </div>

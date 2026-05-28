@@ -2,9 +2,7 @@
 
 @php
     // ── Control de modo de compra ──────────────────────────────────────────
-    // true  = carrito (checkout completo)
-    // false = WhatsApp directo
-    $modoCarrito = true;
+    $modoCarrito = $conf['activar_tienda'] ?? false;
 @endphp
 
     <div class="py-16 px-8 max-w-[1440px] mx-auto">
@@ -159,23 +157,26 @@
                         urlCarrito:       '{{ route('carrito.agregar') }}',
                         csrfToken:        '{{ csrf_token() }}',
                         idProducto:       {{ $producto->id }},
+                        whatsapp:         '{{ $conf['whatsapp_contacto'] ?? '5215500000000' }}',
                     })"
                     class="space-y-6"
                 >
                     {{-- Precio reactivo --}}
-                    <div class="flex items-baseline gap-4">
-                        <span class="font-serif text-3xl text-on-surface"
-                              x-text="formatPrecio(precioActual)"></span>
-                        <template x-if="precioListaActual && precioListaActual > precioActual">
-                            <span class="text-lg text-outline line-through"
-                                  x-text="formatPrecio(precioListaActual)"></span>
-                        </template>
-                        <template x-if="precioListaActual && precioListaActual > precioActual">
-                            <span class="text-xs tracking-[0.1em] uppercase text-tertiary"
-                                  x-text="'-' + Math.round((1 - precioActual / precioListaActual) * 100) + '% descuento'">
-                            </span>
-                        </template>
-                    </div>
+                    @if($conf['activar_tienda'] ?? false)
+                        <div class="flex items-baseline gap-4">
+                            <span class="font-serif text-3xl text-on-surface"
+                                x-text="formatPrecio(precioActual)"></span>
+                            <template x-if="precioListaActual && precioListaActual > precioActual">
+                                <span class="text-lg text-outline line-through"
+                                    x-text="formatPrecio(precioListaActual)"></span>
+                            </template>
+                            <template x-if="precioListaActual && precioListaActual > precioActual">
+                                <span class="text-xs tracking-[0.1em] uppercase text-tertiary"
+                                    x-text="'-' + Math.round((1 - precioActual / precioListaActual) * 100) + '% descuento'">
+                                </span>
+                            </template>
+                        </div>
+                    @endif
 
                     {{-- Descripción --}}
                     @if ($producto->descripcion)
@@ -291,7 +292,7 @@
                         {{-- ── MODO WHATSAPP ── --}}
                         <template x-if="!modoCarrito">
                             <div class="flex flex-col sm:flex-row gap-4 w-full">
-                                
+                                <a
                                     :href="ctaHref"
                                     :class="ctaDisabled ? 'opacity-40 pointer-events-none' : 'hover:opacity-90'"
                                     target="_blank"
@@ -299,7 +300,7 @@
                                     x-text="ctaLabel"
                                 ></a>
                                 <a href="{{ route('visitanos') }}"
-                                   class="inline-flex items-center justify-center border border-outline-variant text-on-surface px-6 py-4 text-xs tracking-[0.3em] uppercase hover:border-on-surface transition-all duration-300">
+                                class="inline-flex items-center justify-center border border-outline-variant text-on-surface px-6 py-4 text-xs tracking-[0.3em] uppercase hover:border-on-surface transition-all duration-300">
                                     Visítanos
                                 </a>
                             </div>
@@ -516,7 +517,7 @@
                     ? `Hola, me interesa el producto: ${nombre} (${opciones}) — ${precio}`
                     : `Hola, me interesa el producto: ${nombre} — ${precio}`;
 
-                return `https://wa.me/5212345678?text=${encodeURIComponent(msg)}`;
+                return `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(msg)}`;
             },
 
             async agregarAlCarrito() {
