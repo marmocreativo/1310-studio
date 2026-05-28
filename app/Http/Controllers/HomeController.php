@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Slide;
 
 class HomeController extends Controller
 {
@@ -22,8 +23,11 @@ class HomeController extends Controller
         $categorias = \App\Models\Categoria::raiz()
             ->where('estado', 'publicado')
             ->get();
+        
+        $slides = Slide::activos()->ordenados()->get();
 
-        return view('pages.public.home', compact('destacados', 'flores', 'categorias'));
+
+        return view('pages.public.home', compact('destacados', 'flores', 'categorias', 'slides'));
     }
 
     public function empresas()

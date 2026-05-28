@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'bypass_pagos' => env('APP_BYPASS_PAGOS', false),
+
 ];

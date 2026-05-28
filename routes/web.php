@@ -21,6 +21,10 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\AdminZonasEnvioController;
 use App\Http\Controllers\AdminPedidosController;
+use App\Http\Controllers\AdminSlidesController;
+use App\Http\Controllers\DireccionesController;
+use App\Http\Controllers\CuentaController;
+use App\Http\Controllers\PedidoPublicoController;
 
 
 
@@ -32,6 +36,10 @@ Route::prefix('admin')
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('paginas', AdminPaginasController::class);
         Route::resource('categorias', AdminCategoriasController::class);
+
+        // Slides Hero
+        Route::post('slides/orden', [AdminSlidesController::class, 'orden'])->name('slides.orden');
+        Route::resource('slides', AdminSlidesController::class);
 
         // Directorio Floral + Galería
         Route::post('directorio-floral/lote', [AdminDirectorioFloralController::class, 'lote'])->name('directorio-floral.lote');
@@ -100,6 +108,33 @@ Route::prefix('admin')
         Route::patch('pedidos/{pedido}/estado', [AdminPedidosController::class, 'cambiarEstado'])->name('pedidos.estado');
     });
 
+    // Cuenta — requiere autenticación
+    Route::middleware(['auth', 'verified'])->prefix('cuenta')->name('cuenta.')->group(function () {
+        Route::get('/',                                          [CuentaController::class, 'dashboard'])->name('dashboard');
+        Route::get('/pedidos',                                   [CuentaController::class, 'pedidos'])->name('pedidos');
+        Route::get('/pedidos/{pedido:numero}',                   [CuentaController::class, 'pedidoShow'])->name('pedidos.show');
+        Route::post('/pedidos/{pedido:numero}/cancelar',         [CuentaController::class, 'pedidoCancelar'])->name('pedidos.cancelar');
+        Route::post('/pedidos/{pedido:numero}/cambio-fecha',     [CuentaController::class, 'pedidoCambioFecha'])->name('pedidos.cambio-fecha');
+        Route::post('/pedidos/{pedido:numero}/reporte',          [CuentaController::class, 'pedidoReporte'])->name('pedidos.reporte');
+        Route::get('/direcciones',                               [CuentaController::class, 'direcciones'])->name('direcciones');
+        Route::post('/direcciones',                              [CuentaController::class, 'direccionStore'])->name('direcciones.store');
+        Route::put('/direcciones/{direccion}',                   [CuentaController::class, 'direccionUpdate'])->name('direcciones.update');
+        Route::delete('/direcciones/{direccion}',                [CuentaController::class, 'direccionDestroy'])->name('direcciones.destroy');
+        Route::patch('/direcciones/{direccion}/predeterminada',  [CuentaController::class, 'direccionPredeterminada'])->name('direcciones.predeterminada');
+        Route::get('/perfil',                                    [CuentaController::class, 'perfil'])->name('perfil');
+        Route::put('/perfil',                                    [CuentaController::class, 'perfilUpdate'])->name('perfil.update');
+        Route::get('/password',                                  [CuentaController::class, 'password'])->name('password');
+        Route::put('/password',                                  [CuentaController::class, 'passwordUpdate'])->name('password.update');
+        Route::get('/fechas',                    [CuentaController::class, 'fechas'])->name('fechas');
+        Route::post('/fechas',                   [CuentaController::class, 'fechaStore'])->name('fechas.store');
+        Route::delete('/fechas/{fecha}',         [CuentaController::class, 'fechaDestroy'])->name('fechas.destroy');
+        
+    });
+
+    // Pedido público (invitados)
+    Route::get('/mi-pedido',  [PedidoPublicoController::class, 'buscar'])->name('pedido-publico.buscar');
+    Route::post('/mi-pedido', [PedidoPublicoController::class, 'show'])->name('pedido-publico.show');
+
     // Rutas públicas
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/visitanos', [HomeController::class, 'visitanos'])->name('visitanos');
@@ -133,11 +168,16 @@ Route::prefix('admin')
     });
 
     // Checkout
-    Route::prefix('checkout')->name('checkout.')->group(function () {
-        Route::get('/', [CheckoutController::class, 'index'])->name('index');
-        Route::post('/procesar', [CheckoutController::class, 'procesar'])->name('procesar');
-        Route::get('/confirmacion/{pedido:numero}', [CheckoutController::class, 'confirmacion'])->name('confirmacion');
-    });
+    Route::get('/checkout/acceso', [CheckoutController::class, 'acceso'])->name('checkout.acceso');
+    Route::post('/checkout/invitado', [CheckoutController::class, 'continuarComoInvitado'])->name('checkout.invitado');
+    Route::get('/checkout/paso/1', [CheckoutController::class, 'paso1'])->name('checkout.paso1');
+    Route::post('/checkout/paso/1', [CheckoutController::class, 'paso1Store'])->name('checkout.paso1.store');
+    Route::get('/checkout/paso/2', [CheckoutController::class, 'paso2'])->name('checkout.paso2');
+    Route::post('/checkout/paso/2', [CheckoutController::class, 'paso2Store'])->name('checkout.paso2.store');
+    Route::get('/checkout/paso/3', [CheckoutController::class, 'paso3'])->name('checkout.paso3');
+    Route::post('/checkout/paso/3', [CheckoutController::class, 'paso3Store'])->name('checkout.paso3.store');
+    Route::get('/checkout/confirmacion/{pedido:numero}', [CheckoutController::class, 'confirmacion'])->name('checkout.confirmacion');
+
 
     // Mercado Pago
     Route::prefix('pagos')->name('pagos.')->group(function () {

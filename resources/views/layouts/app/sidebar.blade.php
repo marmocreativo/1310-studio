@@ -7,7 +7,9 @@
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('admin.dashboard') }}" wire:navigate />
+                <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex items-center">
+                    <img src="{{ asset('images/logo.png') }}" alt="1310 Studio" class="h-16 w-auto">
+                </a>
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
@@ -32,6 +34,9 @@
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="academic-cap" :href="route('admin.talleres.index')" :current="request()->routeIs('admin.talleres.*')" wire:navigate>
                     {{ __('Talleres') }}
+                </flux:sidebar.item>
+                <flux:sidebar.item icon="play" :href="route('admin.slides.index')" :current="request()->routeIs('admin.slides.*')" wire:navigate>
+                    {{ __('Slides Hero') }}
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="document-text" :href="route('admin.paginas.index')" :current="request()->routeIs('admin.paginas.*')" wire:navigate>
                     {{ __('Páginas') }}

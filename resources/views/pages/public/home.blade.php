@@ -1,157 +1,121 @@
 <x-layouts::public :title="__('Inicio')">
 
-    {{-- ═══════════════════════════════════════════
-        HERO — 3 Slides
-    ════════════════════════════════════════════ --}}
-    <section class="relative h-screen w-full overflow-hidden"
-            x-data="{
-                slide: 0,
-                total: 3,
-                timer: null,
-                start() {
-                    this.stop();
-                    this.timer = setInterval(() => this.next(), 10000);
-                },
-                stop() {
-                    clearInterval(this.timer);
-                },
-                next() {
-                    this.slide = (this.slide + 1) % this.total;
-                },
-                prev() {
-                    this.slide = (this.slide - 1 + this.total) % this.total;
-                },
-                goTo(i) {
-                    this.slide = i;
-                    this.start();
-                }
-            }"
-            x-init="start()"
-            @mouseenter="stop()"
-            @mouseleave="start()">
+{{-- ═══════════════════════════════════════════
+    HERO — Slides dinámicos
+════════════════════════════════════════════ --}}
+<section class="relative h-screen w-full overflow-hidden"
+        x-data="{
+            slide: 0,
+            total: {{ $slides->count() }},
+            timer: null,
+            start() {
+                this.stop();
+                this.timer = setInterval(() => this.next(), 10000);
+            },
+            stop() { clearInterval(this.timer); },
+            next() { this.slide = (this.slide + 1) % this.total; },
+            prev() { this.slide = (this.slide - 1 + this.total) % this.total; },
+            goTo(i) { this.slide = i; this.start(); }
+        }"
+        x-init="start()"
+        @mouseenter="stop()"
+        @mouseleave="start()">
 
-        {{-- ────────────────────────────────────────
-            SLIDE 1 — Imagen de fondo
-        ──────────────────────────────────────────── --}}
+    @foreach($slides as $index => $slide)
+
+        {{-- ── Wrapper del slide ── --}}
         <div class="absolute inset-0 transition-opacity duration-1000"
-            :class="slide === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'">
+            :class="slide === {{ $index }} ? 'opacity-100 z-10' : 'opacity-0 z-0'">
 
-            <img src="{{ asset('images/hero_1.jpg') }}"
-                alt="1310 Studio"
-                class="w-full h-full object-cover">
+            {{-- ── Fondo según tipo ── --}}
+            @if($slide->tipo->value === 'video')
+
+                @if($slide->es_youtube)
+                    {{-- YouTube embed como fondo --}}
+                    <iframe
+                        class="absolute w-[177.78vh] min-w-full min-h-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        src="{{ $slide->video_youtube }}?autoplay=1&mute=1&loop=1&playlist={{ Str::afterLast($slide->video_youtube, '=') }}&controls=0&showinfo=0&rel=0&modestbranding=1"
+                        allow="autoplay"
+                        frameborder="0">
+                    </iframe>
+                @elseif($slide->video_url)
+                    <video class="w-full h-full object-cover" autoplay muted loop playsinline>
+                        <source src="{{ $slide->video_url }}" type="video/mp4">
+                    </video>
+                @endif
+
+            @else
+                {{-- Imagen de fondo (imagen y capas) --}}
+                @if($slide->imagen_fondo_url)
+                    <img src="{{ $slide->imagen_fondo_url }}"
+                        alt="{{ $slide->titulo }}"
+                        class="w-full h-full object-cover">
+                @endif
+            @endif
+
+            {{-- Overlay oscuro genérico --}}
             <div class="absolute inset-0 bg-black/25"></div>
 
-            {{-- Copy centrado --}}
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center space-y-8 px-4">
-                <p class="font-body text-white/90 text-2xl tracking-widest uppercase font-light"
-                style="text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
-                    ELEGANCIA EN ESTADO NATURAL
-                </p>
-                <h1 class="font-serif font-light italic text-white drop-shadow-md"
-                    style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
-                    Luxury Flower Lab
-                </h1>
-                <div class="pt-4">
-                    <a href="{{ route('categorias.index') }}" wire:navigate
-                    class="inline-block bg-primary text-on-primary px-12 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-700">
-                        Ramos y arreglos
-                    </a>
+            {{-- ── Overlay de imagen (solo tipo capas) ── --}}
+            @if($slide->tipo->value === 'capas' && $slide->imagen_overlay_url)
+                <div class="absolute bottom-0 right-0 h-full aspect-square pointer-events-none">
+                    <img src="{{ $slide->imagen_overlay_url }}"
+                        alt=""
+                        class="w-full h-full object-cover object-top select-none"
+                        style="animation: flor-drift 8s ease-in-out infinite;">
                 </div>
-            </div>
+            @endif
 
-        </div>
-
-
-        {{-- ────────────────────────────────────────
-            SLIDE 2 — Video de fondo
-        ──────────────────────────────────────────── --}}
-        <div class="absolute inset-0 transition-opacity duration-1000"
-            :class="slide === 1 ? 'opacity-100 z-10' : 'opacity-0 z-0'">
-
-            <video class="w-full h-full object-cover"
-                autoplay muted loop playsinline>
-                <source src="{{ asset('videos/video_hero_1.mp4') }}" type="video/mp4">
-            </video>
-            <div class="absolute inset-0 bg-black/30"></div>
-
-            {{-- Copy centrado --}}
+            {{-- ── Copy centrado ── --}}
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center space-y-8 px-4">
-                <p class="font-body text-white/90 text-2xl tracking-widest uppercase font-light"
-                style="text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
-                    EL ARTE DE LO VIVO
-                </p>
-                <h1 class="font-serif font-light italic text-white drop-shadow-md"
-                    style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
-                    Cada flor, una historia
-                </h1>
-            </div>
 
-        </div>
+                @if($slide->logo_url)
+                    <img src="{{ $slide->logo_url }}"
+                        alt="{{ $slide->titulo }}"
+                        class="w-[15%] max-w-xs opacity-90 select-none pointer-events-none">
+                @endif
 
-
-        {{-- ────────────────────────────────────────
-            SLIDE 3 — Capas: fondo · logo · flor
-        ──────────────────────────────────────────── --}}
-        <div class="absolute inset-0 transition-opacity duration-1000"
-            :class="slide === 2 ? 'opacity-100 z-10' : 'opacity-0 z-0'">
-
-            {{-- Capa 1: fondo — imagen en cover --}}
-            <div class="absolute inset-0">
-                <img src="{{ asset('images/hero_bg.jpg') }}"
-                    alt=""
-                    class="w-full h-full object-cover select-none pointer-events-none">
-            </div>
-
-            {{-- Capa 2: logo + textos centrados en columna --}}
-                <div class="absolute inset-0 flex flex-col items-center justify-center gap-8">
-                    <img src="{{ asset('images/logo_hero.png') }}"
-                        alt="1310 Studio"
-                        class="w-[15%] max-w-xl opacity-90 select-none pointer-events-none">
-
-                    <p class="font-body text-white/80 text-sm tracking-[0.3em] uppercase font-light">
-                        Luxury Flower Lab
+                @if($slide->caption)
+                    <p class="font-body text-white/90 text-2xl tracking-widest uppercase font-light"
+                        style="text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                        {{ $slide->caption }}
                     </p>
-                    <h1 class="font-serif font-light text-white text-center leading-tight"
-                        style="font-size: 4rem; line-height: 1.1">
-                        La belleza <em>que permanece.</em>
+                @endif
+
+                @if($slide->titulo)
+                    <h1 class="font-serif font-light italic text-white drop-shadow-md"
+                        style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                        {{ $slide->titulo }}
                     </h1>
-                    <div class="pt-2">
-                        <a href="{{ route('categorias.index') }}" wire:navigate
-                        class="inline-block border border-white text-white px-12 py-4 text-xs tracking-[0.3em] uppercase hover:bg-white hover:text-on-surface transition-all duration-500">
-                            Explorar colección
+                @endif
+
+                @if($slide->texto_boton && $slide->enlace_boton)
+                    <div class="pt-4">
+                        <a href="{{ $slide->enlace_boton }}"
+                        class="inline-block bg-primary text-on-primary px-12 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-700">
+                            {{ $slide->texto_boton }}
                         </a>
                     </div>
-                </div>
+                @endif
 
-            {{-- Capa 3: flor con transparencia, cuadrada, pegada al fondo, alineada a la derecha --}}
-            <div class="absolute bottom-0 right-0 h-full aspect-square pointer-events-none">
-                <img src="{{ asset('images/flor_hero.png') }}"
-                    alt=""
-                    class="w-full h-full object-cover object-top select-none"
-                    style="animation: flor-drift 8s ease-in-out infinite;">
             </div>
 
         </div>
 
+    @endforeach
 
-        {{-- ────────────────────────────────────────
-            Controles: flechas
-        ──────────────────────────────────────────── --}}
+    {{-- ── Flechas ── --}}
+    @if($slides->count() > 1)
         <button @click="prev(); start()"
-                class="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center transition-colors duration-300 cursor-pointer"
-                :class="slide === 2 ? 'text-white/70 hover:text-white' : 'text-white/70 hover:text-white'">
+                class="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-300 cursor-pointer">
             <flux:icon name="chevron-left" class="w-8 h-8" />
         </button>
         <button @click="next(); start()"
-                class="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center transition-colors duration-300 cursor-pointer"
-                :class="slide === 2 ? 'text-white/70 hover:text-white' : 'text-white/70 hover:text-white'">
+                class="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center text-white/70 hover:text-white transition-colors duration-300 cursor-pointer">
             <flux:icon name="chevron-right" class="w-8 h-8" />
         </button>
 
-
-        {{-- ────────────────────────────────────────
-            Controles: dots
-        ──────────────────────────────────────────── --}}
+        {{-- ── Dots ── --}}
         <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
             <template x-for="i in total" :key="i">
                 <button @click="goTo(i - 1)"
@@ -162,8 +126,9 @@
                 </button>
             </template>
         </div>
+    @endif
 
-    </section>
+</section>
 
 
     {{-- ═══════════════════════════════════════════

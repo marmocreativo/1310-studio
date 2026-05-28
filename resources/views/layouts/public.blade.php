@@ -82,7 +82,7 @@
                    urlCarrito:  '{{ route('carrito.index') }}',
                    urlEliminar: '{{ url('carrito/eliminar') }}',
                    urlActualizar: '{{ url('carrito/actualizar') }}',
-                   urlCheckout: '{{ route('checkout.index') }}',
+                   urlCheckout: '{{ route('checkout.acceso') }}',
                    csrfToken:   '{{ csrf_token() }}',
                })"
                @carrito-actualizado.window="onActualizado($event.detail)"
@@ -286,16 +286,35 @@
                                     <p class="text-xs font-medium text-on-surface">{{ auth()->user()->name }}</p>
                                     <p class="text-[11px] text-on-surface-variant mt-0.5">{{ auth()->user()->email }}</p>
                                 </div>
+
                                 @if(auth()->user()->isAdmin ?? false)
                                     <flux:menu.item href="{{ route('admin.dashboard') }}" icon="squares-2x2" wire:navigate>
                                         Panel Admin
                                     </flux:menu.item>
                                     <flux:menu.separator />
                                 @endif
-                                <flux:menu.item href="{{ route('profile.edit') }}" icon="user" wire:navigate>
-                                    Mi perfil
+
+                                <flux:menu.item href="{{ route('cuenta.dashboard') }}" icon="home" wire:navigate>
+                                    Mi cuenta
                                 </flux:menu.item>
+                                <flux:menu.item href="{{ route('cuenta.pedidos') }}" icon="shopping-bag" wire:navigate>
+                                    Mis pedidos
+                                </flux:menu.item>
+                                <flux:menu.item href="{{ route('cuenta.direcciones') }}" icon="map-pin" wire:navigate>
+                                    Mis direcciones
+                                </flux:menu.item>
+
                                 <flux:menu.separator />
+
+                                <flux:menu.item href="{{ route('cuenta.perfil') }}" icon="user" wire:navigate>
+                                    Datos personales
+                                </flux:menu.item>
+                                <flux:menu.item href="{{ route('cuenta.password') }}" icon="lock-closed" wire:navigate>
+                                    Contraseña
+                                </flux:menu.item>
+
+                                <flux:menu.separator />
+
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle">
@@ -305,9 +324,14 @@
                             </flux:menu>
                         </flux:dropdown>
                     @else
+                        <a href="{{ route('pedido-publico.buscar') }}" wire:navigate
+                        class="text-on-surface-variant hover:text-on-surface transition-colors duration-300 text-[10px] tracking-[0.1em] uppercase hidden md:block"
+                        aria-label="Consultar pedido">
+                            Mi pedido
+                        </a>
                         <a href="{{ route('login') }}" wire:navigate
-                           class="text-on-surface-variant hover:text-on-surface transition-colors duration-300"
-                           aria-label="Iniciar sesión">
+                        class="text-on-surface-variant hover:text-on-surface transition-colors duration-300"
+                        aria-label="Iniciar sesión">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
                             </svg>

@@ -204,7 +204,7 @@
                             </span>
                         </div>
 
-                        <a href="{{ route('checkout.index') }}"
+                        <a href="{{ route('checkout.acceso') }}"
                            class="block w-full bg-primary text-on-primary px-6 py-4 text-xs tracking-[0.3em] uppercase hover:opacity-90 transition-all duration-300 text-center">
                             Proceder al pago
                         </a>

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pedido;
+use App\Mail\PedidoEstado;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 
 class AdminPedidosController extends Controller
@@ -61,6 +63,23 @@ class AdminPedidosController extends Controller
             if ($pago && $pago->estado === 'pendiente') {
                 $pago->update(['estado' => 'aprobado']);
             }
+        }
+
+        // Después de actualizar el estado:
+        $mensajes = [
+            'pagado'     => ['titulo' => 'Pago confirmado',    'mensaje' => 'Hemos confirmado tu pago. Estamos preparando tu pedido con todo el cuidado que merece.'],
+            'preparando' => ['titulo' => 'En preparación',     'mensaje' => 'Tu pedido está siendo preparado por nuestro equipo floral. Pronto estará listo para entrega.'],
+            'enviado'    => ['titulo' => 'En camino',          'mensaje' => 'Tu pedido ha salido de nuestro estudio y está en camino a tu dirección.'],
+            'entregado'  => ['titulo' => '¡Entregado!',        'mensaje' => 'Tu pedido ha sido entregado. Esperamos que lo disfrutes tanto como nosotros disfrutamos crearlo.'],
+            'cancelado'  => ['titulo' => 'Pedido cancelado',   'mensaje' => 'Tu pedido ha sido cancelado. Si tienes dudas no dudes en contactarnos.'],
+        ];
+
+        if (isset($mensajes[$request->estado]) && $pedido->email) {
+            Mail::to($pedido->email)->send(new PedidoEstado(
+                $pedido,
+                $mensajes[$request->estado]['titulo'],
+                $mensajes[$request->estado]['mensaje'],
+            ));
         }
 
         if ($request->expectsJson()) {

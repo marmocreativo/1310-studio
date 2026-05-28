@@ -85,7 +85,7 @@
         <div id="error-pago"
              class="hidden mt-6 border border-red-200 bg-red-50 px-6 py-4">
             <p class="text-sm text-red-700" id="error-pago-msg"></p>
-            <a href="{{ route('checkout.index') }}"
+            <a href="{{ route('checkout.acceso') }}"
                class="inline-block mt-3 text-xs tracking-[0.1em] uppercase text-red-600 underline hover:text-red-800 transition-colors">
                 Volver al checkout
             </a>

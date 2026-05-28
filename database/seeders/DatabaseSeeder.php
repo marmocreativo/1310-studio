@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ProductosSeeder::class);
         $this->call(TalleresSeeder::class);
         $this->call(ZonasEnvioSeeder::class);
+        $this->call(EstadosMunicipiosSeeder::class);
         
     }
 }

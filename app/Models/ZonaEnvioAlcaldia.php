@@ -12,10 +12,16 @@ class ZonaEnvioAlcaldia extends Model
     protected $fillable = [
         'id_zona',
         'nombre',
+        'id_municipio',
     ];
 
     public function zona(): BelongsTo
     {
         return $this->belongsTo(ZonaEnvio::class, 'id_zona');
+    }
+    
+    public function municipio(): BelongsTo
+    {
+        return $this->belongsTo(Municipio::class, 'id_municipio');
     }
 }

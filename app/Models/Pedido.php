@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Municipio;
 
 class Pedido extends Model
 {
@@ -20,9 +21,14 @@ class Pedido extends Model
         'telefono',
         'tipo_entrega',
         'id_zona',
-        'direccion',
+        'direccion',      // campo viejo
+        'calle',          // ← nuevo
+        'numero_ext',     // ← nuevo
+        'numero_int',     // ← nuevo
         'colonia',
-        'municipio',
+        'municipio',      // campo viejo
+        'id_estado',      // ← nuevo
+        'id_municipio',   // ← nuevo
         'cp',
         'referencias',
         'fecha_entrega',
@@ -35,6 +41,7 @@ class Pedido extends Model
         'total',
         'estado',
         'notas',
+        'notas_cancelacion',
     ];
 
     protected $casts = [
@@ -74,6 +81,11 @@ class Pedido extends Model
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class, 'id_pedido');
+    }
+
+    public function municipio(): BelongsTo
+    {
+        return $this->belongsTo(Municipio::class, 'id_municipio');
     }
 
     // ─── Accessors ────────────────────────────────
