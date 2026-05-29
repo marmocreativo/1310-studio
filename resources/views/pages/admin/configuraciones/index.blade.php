@@ -38,7 +38,7 @@
 
                         {{-- Booleanos --}}
                         @if($config->contenido_conf === 'true' || $config->contenido_conf === 'false')
-                            <div class="flex items-center gap-3 mt-2">
+                            <div class="flex items-center gap-4 mt-2">
                                 <input type="hidden" name="contenido_conf" value="false">
                                 <label class="flex items-center gap-2 cursor-pointer select-none">
                                     <input type="checkbox"
@@ -55,6 +55,10 @@
                                         {{ $config->contenido_conf === 'true' ? 'Activado' : 'Desactivado' }}
                                     </span>
                                 </label>
+                                <button type="submit"
+                                    class="text-xs text-zinc-400 hover:text-[#927F64] border border-zinc-200 hover:border-[#927F64] px-2 py-1 rounded-sm transition-colors">
+                                    Guardar
+                                </button>
                             </div>
 
                         {{-- JSON --}}

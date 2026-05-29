@@ -26,7 +26,7 @@
         </div>
         <div class="border border-outline-variant p-6 space-y-2">
             <p class="text-[10px] tracking-[0.2em] uppercase text-on-surface-variant">Miembro hace</p>
-            <p class="font-serif text-4xl text-on-surface">{{ $usuario->created_at->diffInDays(now()) }}</p>
+            <p class="font-serif text-4xl text-on-surface">{{ (int) $usuario->created_at->diffInDays(now()) }}</p>
             <p class="text-xs text-on-surface-variant">días</p>
         </div>
     </div>

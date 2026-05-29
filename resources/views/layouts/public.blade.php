@@ -288,7 +288,7 @@
                                     <p class="text-[11px] text-on-surface-variant mt-0.5">{{ auth()->user()->email }}</p>
                                 </div>
 
-                                @if(auth()->user()->isAdmin ?? false)
+                                @if(auth()->user()->role === 'admin')
                                     <flux:menu.item href="{{ route('admin.dashboard') }}" icon="squares-2x2" wire:navigate>
                                         Panel Admin
                                     </flux:menu.item>
@@ -486,7 +486,8 @@
                 window._offcanvasInit = true;
 
                 window.openNav = function() {
-                    document.getElementById('cart-offcanvas').classList.add('translate-x-full');
+                    const cart = document.getElementById('cart-offcanvas');
+                    if (cart) cart.classList.add('translate-x-full');
                     document.getElementById('nav-offcanvas').classList.remove('-translate-x-full');
                     document.getElementById('nav-overlay').classList.remove('opacity-0', 'pointer-events-none');
                     document.getElementById('nav-overlay').classList.add('opacity-100');
@@ -506,7 +507,8 @@
 
                 window.closeAll = function() {
                     document.getElementById('nav-offcanvas').classList.add('-translate-x-full');
-                    document.getElementById('cart-offcanvas').classList.add('translate-x-full');
+                    const cart = document.getElementById('cart-offcanvas');
+                    if (cart) cart.classList.add('translate-x-full');
                     document.getElementById('nav-overlay').classList.add('opacity-0', 'pointer-events-none');
                     document.getElementById('nav-overlay').classList.remove('opacity-100');
                     document.body.classList.remove('overflow-hidden');
