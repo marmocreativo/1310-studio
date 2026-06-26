@@ -43,7 +43,7 @@
                     <flux:field>
                         <flux:label>Detalles</flux:label>
                         <textarea id="editor-detalles" name="detalles" class="sr-only">{{ old('detalles') }}</textarea>
-                        <div id="editor-detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-40"></div>
+                        <div id="editor-detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-80"></div>
                         <flux:error name="detalles" />
                     </flux:field>
 
@@ -144,6 +144,12 @@
         </form>
 
     </div>
+
+    <style>
+    .ck-editor__editable {
+        min-height: 320px;
+    }
+    </style>
 
     @push('scripts')
     <script>

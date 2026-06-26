@@ -103,7 +103,7 @@
                             <flux:field>
                                 <flux:label>Detalles</flux:label>
                                 <textarea id="editor-detalles" name="detalles" class="sr-only">{{ old('detalles', $producto->detalles) }}</textarea>
-                                <div id="editor-detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-40"></div>
+                                <div id="editor-detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-80"></div>
                                 <flux:error name="detalles" />
                             </flux:field>
 
@@ -159,11 +159,13 @@
                         <div class="space-y-2 max-h-48 overflow-y-auto">
                             @foreach($categorias as $categoria)
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <flux:checkbox
+                                    <input
+                                        type="checkbox"
                                         name="categorias[]"
                                         value="{{ $categoria->id }}"
-                                        :checked="in_array($categoria->id, old('categorias', $categoriasActivas))"
+                                        {{ in_array($categoria->id, old('categorias', $categoriasActivas)) ? 'checked' : '' }}
                                         form="form-datos"
+                                        class="rounded border-zinc-300 text-primary focus:ring-primary"
                                     />
                                     <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $categoria->titulo }}</span>
                                 </label>
@@ -178,11 +180,13 @@
                         <div class="space-y-2 max-h-48 overflow-y-auto">
                             @foreach($flores as $flor)
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <flux:checkbox
+                                    <input
+                                        type="checkbox"
                                         name="flores[]"
                                         value="{{ $flor->id }}"
-                                        :checked="in_array($flor->id, old('flores', $floresActivas))"
+                                        {{ in_array($flor->id, old('flores', $floresActivas)) ? 'checked' : '' }}
                                         form="form-datos"
+                                        class="rounded border-zinc-300 text-primary focus:ring-primary"
                                     />
                                     <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $flor->nombre }}</span>
                                 </label>
@@ -674,219 +678,90 @@
 
 <style>
 [x-cloak] { display: none !important; }
+
+.ck-editor__editable {
+    min-height: 320px;
+}
 </style>
 
 <script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('variacionesManager', (config) => ({
+function inicializarEditorDetalles() {
+    if (typeof CKEDITOR === 'undefined') {
+        console.error('CKEDITOR no se cargó desde el CDN.');
+        return;
+    }
 
-        cargando:        true,
-        guardando:       false,
-        tipos:           [],
-        skus:            [],
-        defaults:        [],
-        nuevoTipo:       '',
-        mostrarDefaults: false,
-        errorTipo:       '',
-        errorGlobal:     '',
-        mensajeGenerar:  '',
+    const container = document.getElementById('editor-detalles-container');
+    const textarea  = document.getElementById('editor-detalles');
 
-        async init() {
-            await Promise.all([this.cargarDatos(), this.cargarDefaults()]);
-            this.cargando = false;
-        },
+    if (!container || !textarea) return;
+    if (container.dataset.ckInitialized) return;
+    container.dataset.ckInitialized = 'true';
 
-        async cargarDatos() {
-            const res  = await fetch(config.urlIndex, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
-            this.aplicarPayload(data);
-        },
+    const { ClassicEditor, Essentials, Bold, Italic, Underline, Link, Paragraph, List } = CKEDITOR;
 
-        async cargarDefaults() {
-            const res  = await fetch(config.urlDefaults, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
-            this.defaults = data.tipos ?? [];
-        },
-
-        aplicarPayload(data) {
-            this.tipos = (data.tipos ?? []).map(t => ({
-                ...t,
-                _editando:    false,
-                _nombreTemp:  '',
-                _nuevaOpcion: '',
-                opciones: (t.opciones ?? []).map(o => ({
-                    ...o,
-                    _editando:   false,
-                    _nombreTemp: '',
-                })),
-            }));
-            this.skus = (data.skus ?? []).map(s => ({
-                ...s,
-                _precioVenta: s.precio_venta,
-                _precioLista: s.precio_lista ?? '',
-            }));
-        },
-
-        async api(url, method = 'GET', body = null) {
-            this.guardando   = true;
-            this.errorGlobal = '';
-            try {
-                const opts = {
-                    method,
-                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                };
-                if (body instanceof FormData) {
-                    opts.body = body;
-                } else if (body) {
-                    opts.headers['Content-Type'] = 'application/json';
-                    opts.body = JSON.stringify(body);
-                }
-                const res  = await fetch(url, opts);
-                const data = await res.json();
-                if (!res.ok) { this.errorGlobal = data.message ?? 'Error en la solicitud.'; return null; }
-                return data;
-            } catch (e) {
-                this.errorGlobal = 'Error de conexión.';
-                return null;
-            } finally {
-                this.guardando = false;
+    ClassicEditor
+        .create(container, {
+            plugins: [Essentials, Bold, Italic, Underline, Link, Paragraph, List],
+            toolbar: ['bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList'],
+            initialData: textarea.value,
+        })
+        .then((editor) => {
+            window.editorDetalles = editor;
+            const form = document.getElementById('form-datos');
+            if (form) {
+                form.addEventListener('submit', () => {
+                    textarea.value = editor.getData();
+                });
             }
-        },
+        })
+        .catch((error) => {
+            console.error('Error al inicializar CKEditor:', error);
+        });
+}
 
-        urlBase()              { return config.urlTipoStore.replace('/tipos', ''); },
-        urlTipo(tipo)          { return `${this.urlBase()}/tipos/${tipo.id}`; },
-        urlOpcionStore(tipo)   { return `${this.urlBase()}/tipos/${tipo.id}/opciones`; },
-        urlOpcion(opcion)      { return `${this.urlBase()}/opciones/${opcion.id}`; },
-        urlSku(sku)            { return `${config.urlSkuStore}/${sku.id}`; },
-        urlSkuImagen(sku)      { return `${config.urlSkuStore}/${sku.id}/imagen`; },
+(function cargarCKEditor() {
+    // Caso 1: CKEDITOR ya está disponible globalmente (otra vista ya lo cargó)
+    if (typeof CKEDITOR !== 'undefined') {
+        inicializarEditorDetalles();
+        return;
+    }
 
-        // ── Defaults ──────────────────────────────────────────────────────────
-        async importarDefault(def) {
-            const data = await this.api(config.urlTipoStore, 'POST', { nombre: def.nombre, id_tipo_default: def.id });
-            if (!data) return;
-
-            const tipo = { ...data.tipo, _editando: false, _nombreTemp: '', _nuevaOpcion: '', opciones: [] };
-
-            for (const opDef of (def.opciones ?? [])) {
-                const opData = await this.api(this.urlOpcionStore(tipo), 'POST', { nombre: opDef.nombre, id_opcion_default: opDef.id });
-                if (opData) tipo.opciones.push({ ...opData.opcion, _editando: false, _nombreTemp: '' });
+    // Caso 2: ya hay un <script> de CKEditor en el DOM
+    const scriptExistente = document.querySelector('script[data-ckeditor-loader]');
+    if (scriptExistente) {
+        // Si el navegador ya completó la carga de ese script previamente (cache),
+        // el evento "load" no volverá a disparar. Por eso usamos polling como respaldo.
+        let intentos = 0;
+        const esperar = setInterval(() => {
+            intentos++;
+            if (typeof CKEDITOR !== 'undefined') {
+                clearInterval(esperar);
+                inicializarEditorDetalles();
+            } else if (intentos > 50) { // ~5 segundos máximo
+                clearInterval(esperar);
+                console.error('Tiempo de espera agotado para CKEDITOR.');
             }
+        }, 100);
+        return;
+    }
 
-            this.tipos.push(tipo);
-        },
-
-        // ── Tipos ─────────────────────────────────────────────────────────────
-        async agregarTipo() {
-            this.errorTipo = '';
-            if (!this.nuevoTipo.trim()) return;
-            const data = await this.api(config.urlTipoStore, 'POST', { nombre: this.nuevoTipo.trim() });
-            if (!data) return;
-            this.tipos.push({ ...data.tipo, _editando: false, _nombreTemp: '', _nuevaOpcion: '', opciones: [] });
-            this.nuevoTipo = '';
-        },
-
-        async guardarNombreTipo(tipo) {
-            if (!tipo._nombreTemp.trim()) return;
-            const data = await this.api(this.urlTipo(tipo), 'PATCH', { nombre: tipo._nombreTemp.trim() });
-            if (!data) return;
-            tipo.nombre    = data.nombre;
-            tipo._editando = false;
-        },
-
-        async eliminarTipo(tipo) {
-            if (!confirm(`¿Eliminar el tipo "${tipo.nombre}" y todas sus opciones? Se eliminarán también las combinaciones afectadas.`)) return;
-            const data = await this.api(this.urlTipo(tipo), 'DELETE');
-            if (!data) return;
-            this.aplicarPayload(data.payload);
-        },
-
-        // ── Opciones ──────────────────────────────────────────────────────────
-        async agregarOpcion(tipo) {
-            if (!tipo._nuevaOpcion || !tipo._nuevaOpcion.trim()) return;
-            const data = await this.api(this.urlOpcionStore(tipo), 'POST', { nombre: tipo._nuevaOpcion.trim() });
-            if (!data) return;
-            tipo.opciones.push({ ...data.opcion, _editando: false, _nombreTemp: '' });
-            tipo._nuevaOpcion = '';
-        },
-
-        async guardarNombreOpcion(tipo, opcion) {
-            if (!opcion._nombreTemp.trim()) return;
-            const data = await this.api(this.urlOpcion(opcion), 'PATCH', { nombre: opcion._nombreTemp.trim() });
-            if (!data) return;
-            opcion.nombre    = data.opcion.nombre;
-            opcion._editando = false;
-        },
-
-        async eliminarOpcion(tipo, opcion) {
-            if (!confirm(`¿Eliminar la opción "${opcion.nombre}"? Se eliminarán las combinaciones que la usen.`)) return;
-            const data = await this.api(this.urlOpcion(opcion), 'DELETE');
-            if (!data) return;
-            this.aplicarPayload(data.payload);
-        },
-
-        async subirImagenOpcion(tipo, opcion, event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const form = new FormData();
-            form.append('imagen',  file);
-            form.append('nombre',  opcion.nombre);
-            form.append('_method', 'PATCH');
-            const data = await this.api(this.urlOpcion(opcion), 'POST', form);
-            if (!data) return;
-            opcion.imagen = data.opcion.imagen;
-        },
-
-        // ── SKUs ──────────────────────────────────────────────────────────────
-        async generarSkus() {
-            this.mensajeGenerar = '';
-            const data = await this.api(config.urlSkuGenerar, 'POST');
-            if (!data) return;
-            if (!data.ok) { this.errorGlobal = data.message; return; }
-            this.mensajeGenerar = data.creados > 0
-                ? `Se generaron ${data.creados} combinaciones nuevas.`
-                : 'Todas las combinaciones posibles ya existen.';
-            this.aplicarPayload(data.payload);
-            setTimeout(() => { this.mensajeGenerar = ''; }, 4000);
-        },
-
-        async actualizarSku(sku) {
-            await this.api(this.urlSku(sku), 'PATCH', {
-                precio_venta: sku._precioVenta,
-                precio_lista: sku._precioLista || null,
-                estado:       sku.estado,
-                notas:        sku.notas,
-            });
-        },
-
-        async toggleEstadoSku(sku) {
-            const data = await this.api(this.urlSku(sku), 'PATCH', {
-                precio_venta: sku._precioVenta,
-                precio_lista: sku._precioLista || null,
-                estado:       !sku.estado,
-                notas:        sku.notas,
-            });
-            if (!data) return;
-            sku.estado = data.sku.estado;
-        },
-
-        async eliminarSku(sku) {
-            if (!confirm(`¿Eliminar la combinación "${sku.label}"?`)) return;
-            const data = await this.api(this.urlSku(sku), 'DELETE');
-            if (!data) return;
-            this.skus = this.skus.filter(s => s.id !== sku.id);
-        },
-
-        async subirImagenSku(sku, event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const form = new FormData();
-            form.append('imagen', file);
-            const data = await this.api(this.urlSkuImagen(sku), 'POST', form);
-            if (!data) return;
-            sku.imagen = data.url;
-        },
-    }));
-});
+    // Caso 3: primera carga real, inyectar el script
+    const script = document.createElement('script');
+    script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
+    script.dataset.ckeditorLoader = 'true';
+    script.onload = () => {
+        const link = document.createElement('link');
+        link.rel  = 'stylesheet';
+        link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
+        document.head.appendChild(link);
+        inicializarEditorDetalles();
+    };
+    script.onerror = () => console.error('No se pudo cargar el script de CKEditor desde el CDN.');
+    document.head.appendChild(script);
+})();
 </script>
+
+
 
 </x-layouts::app>

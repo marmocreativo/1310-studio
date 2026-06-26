@@ -20,7 +20,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.paginas.store') }}" enctype="multipart/form-data">
+    <form id="form-datos" method="POST" action="{{ route('admin.paginas.store') }}" enctype="multipart/form-data">
         @csrf
 
         <div class="flex gap-6 items-start">
@@ -42,7 +42,8 @@
 
                 <flux:field>
                     <flux:label>Contenido</flux:label>
-                    <flux:textarea name="contenido" rows="12">{{ old('contenido') }}</flux:textarea>
+                    <textarea name="contenido" id="contenido" class="sr-only">{{ old('contenido') }}</textarea>
+                    <div id="contenido-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-80"></div>
                     <flux:error name="contenido" />
                 </flux:field>
 
@@ -137,6 +138,12 @@
 
 </div>
 
+<style>
+.ck-editor__editable {
+    min-height: 320px;
+}
+</style>
+
 @push('scripts')
 <script>
 function dropzone(initial = null) {
@@ -153,6 +160,41 @@ function dropzone(initial = null) {
         clear() { this.preview = null; this.filename = ''; this.$el.querySelector('input[type=file]').value = ''; },
     }
 }
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('contenido-container');
+    if (!container) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
+    script.onload = () => {
+        const link = document.createElement('link');
+        link.rel  = 'stylesheet';
+        link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
+        document.head.appendChild(link);
+
+        const {
+            ClassicEditor, Essentials, Bold, Italic, Link, Paragraph,
+            Heading, List, BlockQuote, Indent, IndentBlock, Undo,
+        } = CKEDITOR;
+
+        ClassicEditor.create(container, {
+            plugins: [Essentials, Bold, Italic, Link, Paragraph,
+                      Heading, List, BlockQuote, Indent, IndentBlock, Undo],
+            toolbar: ['heading', '|', 'bold', 'italic', 'link', '|',
+                      'bulletedList', 'numberedList', 'blockQuote', '|',
+                      'indent', 'outdent', '|', 'undo', 'redo'],
+            initialData: document.getElementById('contenido').value,
+        }).then(editor => {
+            document.getElementById('form-datos').addEventListener('submit', () => {
+                document.getElementById('contenido').value = editor.getData();
+            });
+        }).catch(err => console.error('CKEditor error:', err));
+    };
+    document.head.appendChild(script);
+});
 </script>
 @endpush
 

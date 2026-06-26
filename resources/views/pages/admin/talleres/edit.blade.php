@@ -45,9 +45,8 @@
 
                 <flux:field>
                     <flux:label>Detalles</flux:label>
-                    <textarea name="detalles" id="detalles" rows="8"
-                        class="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm p-3"
-                        placeholder="Descripción, temario, requisitos…">{{ old('detalles', $taller->detalles) }}</textarea>
+                    <textarea name="detalles" id="detalles" class="sr-only">{{ old('detalles', $taller->detalles) }}</textarea>
+                    <div id="detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-80"></div>
                     <flux:error name="detalles" />
                 </flux:field>
 
@@ -142,16 +141,85 @@
     </form>
 
 </div>
+
+<style>
+.ck-editor__editable {
+    min-height: 320px;
+}
+</style>
+
 @push('scripts')
-<script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
 <script>
-    ClassicEditor
-        .create(document.querySelector('#detalles'), {
-            toolbar: ['heading', '|', 'bold', 'italic', 'underline', '|',
-                      'bulletedList', 'numberedList', '|', 'link', 'blockQuote', '|',
-                      'undo', 'redo'],
-        })
-        .catch(error => console.error(error));
+function inicializarEditorDetalles() {
+    if (typeof CKEDITOR === 'undefined') {
+        console.error('CKEDITOR no se cargó desde el CDN.');
+        return;
+    }
+
+    const container = document.getElementById('detalles-container');
+    const textarea  = document.getElementById('detalles');
+
+    if (!container || !textarea) return;
+    if (container.dataset.ckInitialized) return;
+    container.dataset.ckInitialized = 'true';
+
+    const {
+        ClassicEditor, Essentials, Bold, Italic, Underline, Link, Paragraph,
+        Heading, List, BlockQuote, Indent, IndentBlock, Undo,
+    } = CKEDITOR;
+
+    ClassicEditor.create(container, {
+        plugins: [Essentials, Bold, Italic, Underline, Link, Paragraph,
+                  Heading, List, BlockQuote, Indent, IndentBlock, Undo],
+        toolbar: ['heading', '|', 'bold', 'italic', 'underline', '|',
+                  'bulletedList', 'numberedList', '|', 'link', 'blockQuote', '|',
+                  'indent', 'outdent', '|', 'undo', 'redo'],
+        initialData: textarea.value,
+    }).then(editor => {
+        const form = document.getElementById('form-datos');
+        if (form) {
+            form.addEventListener('submit', () => {
+                textarea.value = editor.getData();
+            });
+        }
+    }).catch(err => console.error('CKEditor error:', err));
+}
+
+(function cargarCKEditor() {
+    if (typeof CKEDITOR !== 'undefined') {
+        inicializarEditorDetalles();
+        return;
+    }
+
+    const scriptExistente = document.querySelector('script[data-ckeditor-loader]');
+    if (scriptExistente) {
+        let intentos = 0;
+        const esperar = setInterval(() => {
+            intentos++;
+            if (typeof CKEDITOR !== 'undefined') {
+                clearInterval(esperar);
+                inicializarEditorDetalles();
+            } else if (intentos > 50) {
+                clearInterval(esperar);
+                console.error('Tiempo de espera agotado para CKEDITOR.');
+            }
+        }, 100);
+        return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
+    script.dataset.ckeditorLoader = 'true';
+    script.onload = () => {
+        const link = document.createElement('link');
+        link.rel  = 'stylesheet';
+        link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
+        document.head.appendChild(link);
+        inicializarEditorDetalles();
+    };
+    script.onerror = () => console.error('No se pudo cargar el script de CKEditor desde el CDN.');
+    document.head.appendChild(script);
+})();
 </script>
 @endpush
 </x-layouts::app>

@@ -37,6 +37,10 @@ class AdminConfiguracionesController extends Controller
 
         Cache::forget('configuraciones_globales');
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
         return back()->with('success', 'Configuración actualizada.');
     }
 

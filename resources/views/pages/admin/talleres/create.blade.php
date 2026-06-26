@@ -20,7 +20,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.talleres.store') }}" enctype="multipart/form-data">
+    <form id="form-datos" method="POST" action="{{ route('admin.talleres.store') }}" enctype="multipart/form-data">
         @csrf
 
         <div class="flex gap-6 items-start">
@@ -36,9 +36,8 @@
 
                 <flux:field>
                     <flux:label>Detalles</flux:label>
-                    <textarea name="detalles" id="detalles" rows="8"
-                        class="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-sm p-3"
-                        placeholder="Descripción, temario, requisitos…">{{ old('detalles') }}</textarea>
+                    <textarea name="detalles" id="detalles" class="sr-only">{{ old('detalles') }}</textarea>
+                    <div id="detalles-container" class="rounded-lg border border-zinc-200 dark:border-zinc-700 min-h-80"></div>
                     <flux:error name="detalles" />
                 </flux:field>
 
@@ -106,16 +105,46 @@
 
 </div>
 
+<style>
+.ck-editor__editable {
+    min-height: 320px;
+}
+</style>
+
 @push('scripts')
-<script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
 <script>
-    ClassicEditor
-        .create(document.querySelector('#detalles'), {
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('detalles-container');
+    if (!container) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
+    script.onload = () => {
+        const link = document.createElement('link');
+        link.rel  = 'stylesheet';
+        link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
+        document.head.appendChild(link);
+
+        const {
+            ClassicEditor, Essentials, Bold, Italic, Underline, Link, Paragraph,
+            Heading, List, BlockQuote, Indent, IndentBlock, Undo,
+        } = CKEDITOR;
+
+        ClassicEditor.create(container, {
+            plugins: [Essentials, Bold, Italic, Underline, Link, Paragraph,
+                      Heading, List, BlockQuote, Indent, IndentBlock, Undo],
             toolbar: ['heading', '|', 'bold', 'italic', 'underline', '|',
                       'bulletedList', 'numberedList', '|', 'link', 'blockQuote', '|',
-                      'undo', 'redo'],
-        })
-        .catch(error => console.error(error));
+                      'indent', 'outdent', '|', 'undo', 'redo'],
+            initialData: document.getElementById('detalles').value,
+        }).then(editor => {
+            document.getElementById('form-datos').addEventListener('submit', () => {
+                document.getElementById('detalles').value = editor.getData();
+            });
+        }).catch(err => console.error('CKEditor error:', err));
+    };
+    document.head.appendChild(script);
+});
 </script>
 @endpush
 
