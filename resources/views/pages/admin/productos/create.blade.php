@@ -68,10 +68,12 @@
                         <div class="grid grid-cols-2 gap-2 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
                             @foreach($categorias as $categoria)
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <flux:checkbox
+                                    <input
+                                        type="checkbox"
                                         name="categorias[]"
                                         value="{{ $categoria->id }}"
-                                        :checked="in_array($categoria->id, old('categorias', []))"
+                                        {{ in_array($categoria->id, old('categorias', [])) ? 'checked' : '' }}
+                                        class="rounded border-zinc-300 text-primary focus:ring-primary"
                                     />
                                     <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $categoria->titulo }}</span>
                                 </label>
@@ -86,10 +88,12 @@
                         <div class="grid grid-cols-2 gap-2 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 max-h-48 overflow-y-auto">
                             @foreach($flores as $flor)
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <flux:checkbox
+                                    <input
+                                        type="checkbox"
                                         name="flores[]"
                                         value="{{ $flor->id }}"
-                                        :checked="in_array($flor->id, old('flores', []))"
+                                        {{ in_array($flor->id, old('flores', [])) ? 'checked' : '' }}
+                                        class="rounded border-zinc-300 text-primary focus:ring-primary"
                                     />
                                     <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $flor->nombre }}</span>
                                 </label>
@@ -152,59 +156,77 @@
     </style>
 
     @push('scripts')
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const container = document.getElementById('editor-detalles-container');
-        if (!container) return;
+<script>
+function inicializarEditorDetalles() {
+    if (typeof CKEDITOR === 'undefined') {
+        console.error('CKEDITOR no se cargó desde el CDN.');
+        return;
+    }
 
-        const script = document.createElement('script');
-        script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
-        script.onload = () => {
-            const link = document.createElement('link');
-            link.rel  = 'stylesheet';
-            link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
-            document.head.appendChild(link);
+    const container = document.getElementById('editor-detalles-container');
+    const textarea  = document.getElementById('editor-detalles');
 
-            const {
-                ClassicEditor,
-                Essentials,
-                Bold,
-                Italic,
-                Link,
-                Paragraph,
-                Heading,
-                List,
-                BlockQuote,
-                Indent,
-                IndentBlock,
-                Undo,
-            } = CKEDITOR;
+    if (!container || !textarea) return;
+    if (container.dataset.ckInitialized) return;
+    container.dataset.ckInitialized = 'true';
 
-            ClassicEditor
-                .create(container, {
-                    plugins: [
-                        Essentials, Bold, Italic, Link, Paragraph,
-                        Heading, List, BlockQuote, Indent, IndentBlock, Undo,
-                    ],
-                    toolbar: [
-                        'heading', '|',
-                        'bold', 'italic', 'link', '|',
-                        'bulletedList', 'numberedList', 'blockQuote', '|',
-                        'indent', 'outdent', '|',
-                        'undo', 'redo',
-                    ],
-                    initialData: document.getElementById('editor-detalles').value,
-                })
-                .then(editor => {
-                    const form = document.getElementById('form-datos') ?? document.querySelector('form');
-                    form.addEventListener('submit', () => {
-                        document.getElementById('editor-detalles').value = editor.getData();
-                    });
-                })
-                .catch(err => console.error('CKEditor error:', err));
-        };
-        document.head.appendChild(script);
-    });
-    </script>
-    @endpush
+    const {
+        ClassicEditor, Essentials, Bold, Italic, Link, Paragraph,
+        Heading, List, BlockQuote, Indent, IndentBlock, Undo,
+    } = CKEDITOR;
+
+    ClassicEditor.create(container, {
+        plugins: [Essentials, Bold, Italic, Link, Paragraph,
+                  Heading, List, BlockQuote, Indent, IndentBlock, Undo],
+        toolbar: ['heading', '|', 'bold', 'italic', 'link', '|',
+                  'bulletedList', 'numberedList', 'blockQuote', '|',
+                  'indent', 'outdent', '|', 'undo', 'redo'],
+        initialData: textarea.value,
+    }).then(editor => {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', () => {
+                textarea.value = editor.getData();
+            });
+        }
+    }).catch(err => console.error('CKEditor error:', err));
+}
+
+(function cargarCKEditor() {
+    if (typeof CKEDITOR !== 'undefined') {
+        inicializarEditorDetalles();
+        return;
+    }
+
+    const scriptExistente = document.querySelector('script[data-ckeditor-loader]');
+    if (scriptExistente) {
+        let intentos = 0;
+        const esperar = setInterval(() => {
+            intentos++;
+            if (typeof CKEDITOR !== 'undefined') {
+                clearInterval(esperar);
+                inicializarEditorDetalles();
+            } else if (intentos > 50) {
+                clearInterval(esperar);
+                console.error('Tiempo de espera agotado para CKEDITOR.');
+            }
+        }, 100);
+        return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
+    script.dataset.ckeditorLoader = 'true';
+    script.onload = () => {
+        const link = document.createElement('link');
+        link.rel  = 'stylesheet';
+        link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
+        document.head.appendChild(link);
+        inicializarEditorDetalles();
+    };
+    script.onerror = () => console.error('No se pudo cargar el script de CKEditor desde el CDN.');
+    document.head.appendChild(script);
+})();
+</script>
+@endpush
 </x-layouts::app>

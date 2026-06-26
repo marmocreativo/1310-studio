@@ -163,38 +163,76 @@ function dropzone(initial = null) {
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+function inicializarEditorContenido() {
+    if (typeof CKEDITOR === 'undefined') {
+        console.error('CKEDITOR no se cargó desde el CDN.');
+        return;
+    }
+
     const container = document.getElementById('contenido-container');
-    if (!container) return;
+    const textarea  = document.getElementById('contenido');
+
+    if (!container || !textarea) return;
+    if (container.dataset.ckInitialized) return;
+    container.dataset.ckInitialized = 'true';
+
+    const {
+        ClassicEditor, Essentials, Bold, Italic, Link, Paragraph,
+        Heading, List, BlockQuote, Indent, IndentBlock, Undo,
+    } = CKEDITOR;
+
+    ClassicEditor.create(container, {
+        plugins: [Essentials, Bold, Italic, Link, Paragraph,
+                  Heading, List, BlockQuote, Indent, IndentBlock, Undo],
+        toolbar: ['heading', '|', 'bold', 'italic', 'link', '|',
+                  'bulletedList', 'numberedList', 'blockQuote', '|',
+                  'indent', 'outdent', '|', 'undo', 'redo'],
+        initialData: textarea.value,
+    }).then(editor => {
+        const form = document.getElementById('form-datos');
+        if (form) {
+            form.addEventListener('submit', () => {
+                textarea.value = editor.getData();
+            });
+        }
+    }).catch(err => console.error('CKEditor error:', err));
+}
+
+(function cargarCKEditor() {
+    if (typeof CKEDITOR !== 'undefined') {
+        inicializarEditorContenido();
+        return;
+    }
+
+    const scriptExistente = document.querySelector('script[data-ckeditor-loader]');
+    if (scriptExistente) {
+        let intentos = 0;
+        const esperar = setInterval(() => {
+            intentos++;
+            if (typeof CKEDITOR !== 'undefined') {
+                clearInterval(esperar);
+                inicializarEditorContenido();
+            } else if (intentos > 50) {
+                clearInterval(esperar);
+                console.error('Tiempo de espera agotado para CKEDITOR.');
+            }
+        }, 100);
+        return;
+    }
 
     const script = document.createElement('script');
     script.src = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.umd.js';
+    script.dataset.ckeditorLoader = 'true';
     script.onload = () => {
         const link = document.createElement('link');
         link.rel  = 'stylesheet';
         link.href = 'https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css';
         document.head.appendChild(link);
-
-        const {
-            ClassicEditor, Essentials, Bold, Italic, Link, Paragraph,
-            Heading, List, BlockQuote, Indent, IndentBlock, Undo,
-        } = CKEDITOR;
-
-        ClassicEditor.create(container, {
-            plugins: [Essentials, Bold, Italic, Link, Paragraph,
-                      Heading, List, BlockQuote, Indent, IndentBlock, Undo],
-            toolbar: ['heading', '|', 'bold', 'italic', 'link', '|',
-                      'bulletedList', 'numberedList', 'blockQuote', '|',
-                      'indent', 'outdent', '|', 'undo', 'redo'],
-            initialData: document.getElementById('contenido').value,
-        }).then(editor => {
-            document.getElementById('form-datos').addEventListener('submit', () => {
-                document.getElementById('contenido').value = editor.getData();
-            });
-        }).catch(err => console.error('CKEditor error:', err));
+        inicializarEditorContenido();
     };
+    script.onerror = () => console.error('No se pudo cargar el script de CKEditor desde el CDN.');
     document.head.appendChild(script);
-});
+})();
 </script>
 @endpush
 
