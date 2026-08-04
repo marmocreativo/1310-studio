@@ -232,6 +232,7 @@
                     class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 space-y-5"
                     x-data="galeriaUploader({
                         uploadUrl: '{{ route('admin.productos.galeria.store', $producto) }}',
+                        reorderUrl: '{{ route('admin.productos.galeria.orden', $producto) }}',
                         csrfToken: '{{ csrf_token() }}',
                         inicial: [
                             @foreach($producto->galeria as $img)
@@ -256,10 +257,16 @@
                     {{-- Grid de imágenes --}}
                     <div class="grid grid-cols-3 sm:grid-cols-4 gap-3" x-show="imagenes.length > 0">
                         <template x-for="img in imagenes" :key="img.id">
-                            <div class="relative group">
+                            <div
+                                class="relative group cursor-move"
+                                draggable="true"
+                                @dragstart="dragStart(img)"
+                                @dragover.prevent="dragOverImg(img)"
+                                @dragend="dragEnd()"
+                            >
                                 <img
                                     :src="img.url"
-                                    class="w-full aspect-square object-cover rounded-lg ring-1 ring-zinc-200 dark:ring-zinc-700"
+                                    class="w-full aspect-square object-cover rounded-lg ring-1 ring-zinc-200 dark:ring-zinc-700 pointer-events-none"
                                 >
                                 <div x-show="img.portada" class="absolute top-1 left-1">
                                     <span class="text-xs bg-zinc-800/70 text-white px-1.5 py-0.5 rounded">Portada</span>
@@ -627,7 +634,7 @@
                                             </td>
 
                                             <td class="px-4 py-3 text-center">
-                                                <label ::for="'img-sku-' + sku.id" class="cursor-pointer inline-block">
+                                                <button type="button" @click="toggleGaleriaSku(sku)" class="relative inline-block">
                                                     <template x-if="sku.imagen">
                                                         <img :src="sku.imagen" class="size-9 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-700 mx-auto hover:opacity-80 transition-opacity" />
                                                     </template>
@@ -636,8 +643,14 @@
                                                             <flux:icon name="photo" class="size-4 text-zinc-400" />
                                                         </div>
                                                     </template>
-                                                    <input ::id="'img-sku-' + sku.id" type="file" accept="image/*" class="sr-only" @change="subirImagenSku(sku, $event)" />
-                                                </label>
+                                                    <span x-show="sku.galeria.length > 1" x-text="sku.galeria.length" class="absolute -top-1 -right-1 flex items-center justify-center size-4 rounded-full bg-zinc-800 text-white text-[10px]"></span>
+                                                    <div x-show="subiendoGaleriaSku === sku.id" class="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
+                                                        <svg class="animate-spin size-4 text-white" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                                        </svg>
+                                                    </div>
+                                                </button>
                                             </td>
 
                                             <td class="px-4 py-3 text-center">
@@ -660,6 +673,73 @@
                                                     class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-400 hover:text-red-500 transition-colors">
                                                     <flux:icon name="trash" class="size-4" />
                                                 </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+
+                                {{-- Fila expandible de galería (fuera del x-for para respetar "single root") --}}
+                                <tbody x-show="skuExpandido !== null" x-cloak>
+                                    <template x-if="skuExpandido !== null" x-data="{ get sku() { return skus.find(s => s.id === skuExpandido) } }">
+                                        <tr>
+                                            <td colspan="6" class="px-4 py-4 bg-zinc-50 dark:bg-zinc-800/40">
+                                                <div class="space-y-3" x-show="sku">
+                                                    <div class="flex items-center justify-between">
+                                                        <flux:text class="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                                                            Galería de <span x-text="sku?.label"></span>
+                                                        </flux:text>
+                                                        <div class="flex items-center gap-2">
+                                                            <span x-show="subiendoGaleriaSku === skuExpandido" class="flex items-center gap-1.5 text-xs text-zinc-400">
+                                                                <svg class="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
+                                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                                                </svg>
+                                                                Subiendo…
+                                                            </span>
+                                                            <button type="button" @click="skuExpandido = null" class="text-zinc-400 hover:text-zinc-600">
+                                                                <flux:icon name="x-mark" class="size-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-4 sm:grid-cols-6 gap-2" x-show="sku && sku.galeria.length > 0">
+                                                        <template x-for="img in (sku ? sku.galeria : [])" :key="img.id">
+                                                            <div
+                                                                class="relative group cursor-move"
+                                                                draggable="true"
+                                                                @dragstart="dragStartSkuImg(img)"
+                                                                @dragover.prevent="dragOverSkuImg(sku, img)"
+                                                                @dragend="dragEndSkuImg(sku)"
+                                                            >
+                                                                <img :src="img.url" class="w-full aspect-square object-cover rounded-lg ring-1 ring-zinc-200 dark:ring-zinc-700 pointer-events-none" />
+                                                                <button
+                                                                    type="button"
+                                                                    @click="eliminarImagenGaleriaSku(sku, img)"
+                                                                    class="absolute top-1 right-1 flex items-center justify-center w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                >
+                                                                    <flux:icon name="x-mark" class="size-3" />
+                                                                </button>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    <label
+                                                        :class="subiendoGaleriaSku === skuExpandido ? 'opacity-50 cursor-not-allowed border-zinc-200 dark:border-zinc-700' : 'border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 cursor-pointer'"
+                                                        class="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-3 text-sm text-zinc-500 transition-colors"
+                                                    >
+                                                        <template x-if="subiendoGaleriaSku !== skuExpandido">
+                                                            <flux:icon name="arrow-up-tray" class="size-4" />
+                                                        </template>
+                                                        <template x-if="subiendoGaleriaSku === skuExpandido">
+                                                            <svg class="animate-spin size-4" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                                            </svg>
+                                                        </template>
+                                                        <span x-text="subiendoGaleriaSku === skuExpandido ? 'Subiendo…' : 'Agregar imágenes'"></span>
+                                                        <input type="file" accept="image/*" multiple class="sr-only" :disabled="subiendoGaleriaSku === skuExpandido" @change="subirGaleriaSku(sku, $event.target.files); $event.target.value = ''" />
+                                                    </label>
+                                                </div>
                                             </td>
                                         </tr>
                                     </template>

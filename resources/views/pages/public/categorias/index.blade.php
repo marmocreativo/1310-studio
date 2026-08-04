@@ -14,7 +14,7 @@
         @if($categorias->isEmpty())
             <p class="text-on-surface-variant text-sm">No hay categorías disponibles.</p>
         @else
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($categorias as $categoria)
                     <a href="{{ route('categorias.show', $categoria->slug) }}" wire:navigate
                     class="relative overflow-hidden bg-stone-100 group block" style="aspect-ratio: 4/3;">

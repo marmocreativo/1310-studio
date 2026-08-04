@@ -1,539 +1,413 @@
 <?php
-// Archivo de mantenimiento - Laravel in Nginx
-// Solo funciones esenciales para actualizaciones y mantenimiento
+/**
+ * setup-toolkit.php — Herramienta genérica de despliegue y diagnóstico Laravel
+ * ⚠️  Eliminar después de cada sesión de mantenimiento.
+ *
+ * Coloca este archivo en el directorio público del servidor, al mismo nivel
+ * desde donde puedas referenciar la carpeta raíz del proyecto Laravel.
+ */
 
-// Habilitar reporte de errores
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 
-echo "<h2>🔍 Iniciando sistema...</h2>";
+// ── CONFIG: editar por proyecto ────────────────────────────────────────────
+define('TOOL_NAME', 'Deploy Toolkit');           // Nombre mostrado en el header
+define('APP_ROOT',    dirname(__DIR__, 2) . '/1310studio'); // Ajusta la ruta al proyecto Laravel
+define('PUBLIC_ROOT', __DIR__);
+
+// Subcarpetas del disco "public" que quieras auditar en la sección Storage.
+// Déjalo vacío ([]) si no aplica a este proyecto.
+$MEDIA_FOLDERS = [
+    // 'categorias',
+    // 'productos/galeria',
+];
+
+// Variables ENV de servicios opcionales que quieras exponer en la sección ENV.
+// Formato: 'NOMBRE_ENV' => 'Etiqueta a mostrar'
+$EXTRA_SERVICE_ENV_KEYS = [
+    // 'MERCADOPAGO_ACCESS_TOKEN' => 'MercadoPago Token',
+    // 'STRIPE_SECRET' => 'Stripe Secret',
+];
+// ─────────────────────────────────────────────────────────────────────────
+
+// ── Cargar Laravel ────────────────────────────────────────────────────────
+$laravelOk = false;
+$laravelError = null;
 
 try {
-    echo "1. Cargando autoloader... ";
-    require __DIR__.'/../../cotizaciones/vendor/autoload.php';
-    echo "✅<br>";
-    
-    echo "2. Cargando bootstrap... ";
-    $app = require_once __DIR__.'/../../cotizaciones/bootstrap/app.php';
-    echo "✅<br>";
-    
-    echo "3. Capturando Request... ";
-    $request = \Illuminate\Http\Request::capture();
-    echo "✅<br>";
-    
-    echo "4. Creando kernel... ";
-    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
-    echo "✅<br>";
-    
-    echo "5. Inicializando aplicación... ";
-    $response = $kernel->handle($request);
-    echo "✅<br>";
-    
-    echo "6. Laravel cargado correctamente!<br><br>";
-    
-} catch (Exception $e) {
-    echo "<div style='background: #f8d7da; padding: 15px; border: 1px solid #f5c6cb; margin: 10px 0;'>";
-    echo "<h3>❌ Error cargando Laravel:</h3>";
-    echo "<strong>Mensaje:</strong> " . htmlspecialchars($e->getMessage()) . "<br>";
-    echo "<strong>Archivo:</strong> " . htmlspecialchars($e->getFile()) . "<br>";
-    echo "<strong>Línea:</strong> " . $e->getLine() . "<br>";
-    echo "<strong>Trace:</strong><br><pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
-    echo "</div>";
-    exit;
-} catch (Error $e) {
-    echo "<div style='background: #f8d7da; padding: 15px; border: 1px solid #f5c6cb; margin: 10px 0;'>";
-    echo "<h3>❌ Error Fatal:</h3>";
-    echo "<strong>Mensaje:</strong> " . htmlspecialchars($e->getMessage()) . "<br>";
-    echo "<strong>Archivo:</strong> " . htmlspecialchars($e->getFile()) . "<br>";
-    echo "<strong>Línea:</strong> " . $e->getLine() . "<br>";
-    echo "</div>";
-    exit;
+    require APP_ROOT . '/vendor/autoload.php';
+    $app    = require_once APP_ROOT . '/bootstrap/app.php';
+    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+    $kernel->handle(Illuminate\Http\Request::capture());
+    $laravelOk = true;
+} catch (Throwable $e) {
+    $laravelError = $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine();
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+function artisan(string $cmd, array $params = []): string {
+    Illuminate\Support\Facades\Artisan::call($cmd, $params);
+    return trim(Illuminate\Support\Facades\Artisan::output());
+}
+
+function ok(string $msg): string  { return "<span class='ok'>✅ {$msg}</span>"; }
+function err(string $msg): string { return "<span class='err'>❌ {$msg}</span>"; }
+function warn(string $msg): string{ return "<span class='warn'>⚠️  {$msg}</span>"; }
+function info(string $msg): string{ return "<span class='info'>ℹ️  {$msg}</span>"; }
+
+// ── Procesar acción POST ─────────────────────────────────────────────────
+$result = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $laravelOk) {
+    $action = $_POST['action'];
+    ob_start();
+
+    try {
+        switch ($action) {
+
+            // ── ENV ───────────────────────────────────────────────────────
+            case 'env':
+                echo "<strong>APLICACIÓN</strong>\n";
+                echo sprintf("  %-28s %s\n", 'APP_NAME',  config('app.name'));
+                echo sprintf("  %-28s %s\n", 'APP_ENV',   config('app.env'));
+                echo sprintf("  %-28s %s\n", 'APP_DEBUG', config('app.debug') ? warn('true') : ok('false'));
+                echo sprintf("  %-28s %s\n", 'APP_URL',   config('app.url'));
+                echo sprintf("  %-28s %s\n", 'APP_KEY',   config('app.key') ? ok('Configurada') : err('NO CONFIGURADA'));
+
+                echo "\n<strong>BASE DE DATOS</strong>\n";
+                echo sprintf("  %-28s %s\n", 'DB_CONNECTION', config('database.default'));
+                echo sprintf("  %-28s %s\n", 'DB_HOST',       config('database.connections.mysql.host'));
+                echo sprintf("  %-28s %s\n", 'DB_PORT',       config('database.connections.mysql.port'));
+                echo sprintf("  %-28s %s\n", 'DB_DATABASE',   config('database.connections.mysql.database'));
+                echo sprintf("  %-28s %s\n", 'DB_USERNAME',   config('database.connections.mysql.username'));
+                $pass = config('database.connections.mysql.password');
+                echo sprintf("  %-28s %s\n", 'DB_PASSWORD',   $pass ? ok('Configurada (' . strlen($pass) . ' chars)') : err('vacía'));
+
+                echo "\n<strong>STORAGE</strong>\n";
+                echo sprintf("  %-28s %s\n", 'FILESYSTEM_DISK',        config('filesystems.default'));
+                echo sprintf("  %-28s %s\n", 'FILESYSTEM_PUBLIC_ROOT', config('filesystems.disks.public.root'));
+                echo sprintf("  %-28s %s\n", 'FILESYSTEM_PUBLIC_URL',  config('filesystems.disks.public.url'));
+
+                if (!empty($EXTRA_SERVICE_ENV_KEYS)) {
+                    echo "\n<strong>SERVICIOS</strong>\n";
+                    foreach ($EXTRA_SERVICE_ENV_KEYS as $envKey => $label) {
+                        $value = env($envKey);
+                        echo sprintf("  %-28s %s\n", $label, $value ? ok('Configurado') : err('NO configurado'));
+                    }
+                }
+
+                echo "\n<strong>MAIL</strong>\n";
+                echo sprintf("  %-28s %s\n", 'MAIL_MAILER', config('mail.default'));
+                echo sprintf("  %-28s %s\n", 'MAIL_HOST',   config('mail.mailers.smtp.host') ?? 'N/A');
+                echo sprintf("  %-28s %s\n", 'MAIL_FROM',   config('mail.from.address') ?? 'N/A');
+                break;
+
+            // ── TEST DB ───────────────────────────────────────────────────
+            case 'db':
+                try {
+                    $pdo    = Illuminate\Support\Facades\DB::connection()->getPdo();
+                    $dbname = Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+                    echo ok("Conexión exitosa → {$dbname}") . "\n\n";
+
+                    $tables = Illuminate\Support\Facades\DB::select('SHOW TABLES');
+                    $count  = count($tables);
+                    echo ok("{$count} tablas encontradas") . "\n";
+
+                    $names = array_map(fn($t) => array_values((array)$t)[0], $tables);
+                    sort($names);
+                    foreach ($names as $name) {
+                        echo "  · {$name}\n";
+                    }
+                } catch (Throwable $e) {
+                    echo err('No se pudo conectar') . "\n";
+                    echo "  Mensaje: " . $e->getMessage() . "\n";
+                    echo "\n" . warn('Verifica DB_HOST, DB_DATABASE, DB_USERNAME y DB_PASSWORD en tu .env') . "\n";
+                }
+                break;
+
+            // ── MIGRAR ────────────────────────────────────────────────────
+            case 'migrate':
+                try {
+                    echo info('Ejecutando: php artisan migrate --force') . "\n\n";
+                    $out = artisan('migrate', ['--force' => true]);
+                    echo ok('migrate completado') . "\n{$out}\n";
+                } catch (Throwable $e) {
+                    echo err('migrate falló') . "\n" . $e->getMessage() . "\n";
+                    echo info('Revisa el estado de migraciones antes de reintentar') . "\n";
+                }
+                break;
+
+            // ── ESTADO DE MIGRACIONES ────────────────────────────────────
+            case 'migrate_status':
+                try {
+                    $out = artisan('migrate:status');
+                    echo ok('migrate:status') . "\n{$out}\n";
+                } catch (Throwable $e) {
+                    echo err('migrate:status falló') . "\n" . $e->getMessage() . "\n";
+                }
+                break;
+
+            // ── CLEAR CACHE ───────────────────────────────────────────────
+            case 'clear':
+                $cmds = ['config:clear', 'route:clear', 'view:clear', 'cache:clear', 'event:clear'];
+                foreach ($cmds as $cmd) {
+                    try {
+                        $out = artisan($cmd);
+                        echo ok($cmd) . ($out ? " → {$out}" : '') . "\n";
+                    } catch (Throwable $e) {
+                        echo err($cmd) . " → " . $e->getMessage() . "\n";
+                    }
+                }
+
+                echo "\n<strong>Limpieza manual de bootstrap/cache</strong>\n";
+                $cacheDir = APP_ROOT . '/bootstrap/cache';
+                $files = glob($cacheDir . '/*.php') ?: [];
+                if (empty($files)) {
+                    echo info('bootstrap/cache ya estaba vacío') . "\n";
+                } else {
+                    foreach ($files as $f) {
+                        @unlink($f) ? print(ok(basename($f) . ' eliminado') . "\n") : print(warn('No se pudo eliminar ' . basename($f)) . "\n");
+                    }
+                }
+
+                echo "\n<strong>Limpieza manual de storage/framework/views</strong>\n";
+                $viewsDir = APP_ROOT . '/storage/framework/views';
+                $views = glob($viewsDir . '/*.php') ?: [];
+                echo count($views) > 0
+                    ? ok(count($views) . ' archivos de vistas compiladas eliminados') . "\n"
+                    : info('Sin vistas compiladas') . "\n";
+                foreach ($views as $v) { @unlink($v); }
+                break;
+
+            // ── OPTIMIZE ──────────────────────────────────────────────────
+            case 'optimize':
+                try {
+                    $out = artisan('optimize');
+                    echo ok('optimize completado') . "\n{$out}\n";
+                } catch (Throwable $e) {
+                    echo err('optimize falló') . "\n" . $e->getMessage() . "\n";
+                    echo info('Intenta correr clear primero') . "\n";
+                }
+                break;
+
+            // ── STORAGE INFO ─────────────────────────────────────────────
+            case 'storage':
+                $diskRoot = config('filesystems.disks.public.root');
+                $diskUrl  = config('filesystems.disks.public.url');
+
+                echo "<strong>Configuración del disco public</strong>\n";
+                echo sprintf("  %-20s %s\n", 'root (física):', $diskRoot);
+                echo sprintf("  %-20s %s\n", 'url (pública):', $diskUrl);
+
+                echo "\n<strong>¿Existe la carpeta root?</strong>\n";
+                if (is_dir($diskRoot)) {
+                    echo ok($diskRoot . ' existe') . "\n";
+                    echo sprintf("  %-20s %s\n", 'Permisos:', substr(sprintf('%o', fileperms($diskRoot)), -4));
+                    echo sprintf("  %-20s %s\n", 'Escribible:', is_writable($diskRoot) ? ok('Sí') : err('No'));
+                } else {
+                    echo err($diskRoot . ' NO existe') . "\n";
+                    echo info('Crear la carpeta manualmente vía FTP o cPanel') . "\n";
+                }
+
+                if (!empty($MEDIA_FOLDERS)) {
+                    echo "\n<strong>Subcarpetas de media</strong>\n";
+                    foreach ($MEDIA_FOLDERS as $folder) {
+                        $path = $diskRoot . '/' . $folder;
+                        if (is_dir($path)) {
+                            $files = count(array_diff(scandir($path), ['.', '..']));
+                            echo ok($folder) . " ({$files} archivos)\n";
+                        } else {
+                            echo warn($folder . ' no existe aún') . "\n";
+                        }
+                    }
+                }
+
+                echo "\n<strong>Test de escritura</strong>\n";
+                $testFile = '_test_write_' . time() . '.txt';
+                try {
+                    Illuminate\Support\Facades\Storage::disk('public')->put($testFile, 'test-' . date('c'));
+                    echo ok("Storage::disk('public')->put() funciona") . "\n";
+                    $publicPath = $diskRoot . '/' . $testFile;
+                    echo is_file($publicPath)
+                        ? ok('Archivo accesible en ruta física') . "\n"
+                        : warn('Archivo no encontrado en ruta física (¿ruta incorrecta?)') . "\n";
+                    Illuminate\Support\Facades\Storage::disk('public')->delete($testFile);
+                    echo info('Archivo de prueba eliminado') . "\n";
+                } catch (Throwable $e) {
+                    echo err('Error de escritura: ' . $e->getMessage()) . "\n";
+                }
+
+                echo "\n<strong>URL de ejemplo</strong>\n";
+                echo "  " . $diskUrl . "/ejemplo.webp\n";
+                break;
+
+            default:
+                echo warn('Acción desconocida') . "\n";
+        }
+    } catch (Throwable $e) {
+        echo err('Error inesperado') . "\n";
+        echo $e->getMessage() . "\n";
+        echo "En " . $e->getFile() . ':' . $e->getLine() . "\n";
+    }
+
+    $result = ob_get_clean();
+}
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Mantenimiento - Laravel Installation</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= htmlspecialchars(TOOL_NAME) ?></title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
-        .btn { display: inline-block; padding: 10px 20px; margin: 10px; background: #007cba; color: white; text-decoration: none; border-radius: 5px; border: none; cursor: pointer; font-size: 14px; }
-        .btn:hover { background: #005a87; }
-        .output { background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #007cba; }
-        .error { border-left-color: #dc3545; background: #f8d7da; }
-        .success { border-left-color: #28a745; background: #d4edda; }
-        h1 { color: #333; }
-        h2 { color: #666; margin-top: 30px; }
-        pre { background: #f1f3f4; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
-        .debug-info { background: #e7f3ff; padding: 10px; margin: 10px 0; border-radius: 4px; font-size: 12px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Courier New', monospace; background: #0f0f0f; color: #d4d4d4; min-height: 100vh; padding: 2rem; }
+        .wrap { max-width: 860px; margin: 0 auto; }
+
+        header { border-bottom: 1px solid #333; padding-bottom: 1.5rem; margin-bottom: 2rem; }
+        header h1 { font-family: Georgia, serif; font-size: 1.6rem; color: #9fb4c9; font-weight: normal; letter-spacing: .05em; }
+        header p  { font-size: .75rem; color: #666; margin-top: .4rem; }
+
+        .warning { background: #2a1a1a; border: 1px solid #a04c4c; border-radius: 4px; padding: .75rem 1rem; margin-bottom: 2rem; font-size: .8rem; color: #e08a8a; }
+
+        .status { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: .75rem 1rem; margin-bottom: 2rem; font-size: .8rem; }
+        .status .ok  { color: #6dbf67; }
+        .status .err { color: #e06c6c; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .75rem; margin-bottom: 2rem; }
+
+        form.action-form { display: contents; }
+
+        button {
+            width: 100%;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            color: #9fb4c9;
+            padding: .75rem 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: .8rem;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background .2s, border-color .2s;
+            text-align: left;
+        }
+        button:hover { background: #2a2a2a; border-color: #9fb4c9; }
+        button .icon { display: block; font-size: 1.2rem; margin-bottom: .35rem; }
+        button .label { display: block; }
+        button .desc { display: block; font-size: .65rem; color: #666; margin-top: .2rem; text-transform: none; letter-spacing: 0; }
+
+        button.danger { color: #e0a06c; }
+        button.danger:hover { border-color: #e0a06c; }
+
+        .output-wrap { background: #111; border: 1px solid #333; border-radius: 4px; padding: 1.25rem 1.5rem; }
+        .output-wrap h2 { font-size: .8rem; color: #888; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 1rem; border-bottom: 1px solid #222; padding-bottom: .5rem; }
+        .output-wrap pre { font-size: .8rem; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+
+        .ok   { color: #6dbf67; }
+        .err  { color: #e06c6c; }
+        .warn { color: #e0b96c; }
+        .info { color: #6cb4e0; }
+
+        footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #222; font-size: .7rem; color: #444; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🧹 Laravel Installation - Mantenimiento</h1>
-        <p><strong>⚠️ IMPORTANTE:</strong> Este archivo debe eliminarse después de las actualizaciones.</p>
-        
-        <div class="debug-info">
-            <strong>🔍 Herramientas de Mantenimiento</strong><br>
-            Solo funciones esenciales para actualizaciones y mantenimiento del sistema.
-        </div>
+<div class="wrap">
 
-        <h2>🗄️ Base de Datos</h2>
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="migrate" class="btn">Ejecutar Migraciones</button>
-        </form>
+    <header>
+        <h1><?= htmlspecialchars(TOOL_NAME) ?></h1>
+        <p>Herramienta de despliegue y diagnóstico · <?= date('Y-m-d H:i:s') ?> · PHP <?= PHP_VERSION ?></p>
+    </header>
 
-        <h2>🚀 Optimización</h2>
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="cache_clear" class="btn">Limpiar Cache</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="view_clear" class="btn">Limpiar Cache Vistas</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="optimize" class="btn">Optimize</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="config_cache" class="btn">Cache Config</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="config_clear_manual" class="btn">Clear Config (Manual)</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="route_cache" class="btn">Cache Routes</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="route_clear" class="btn">Clear Route Cache</button>
-        </form>
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="storage_link" class="btn">Storage Link</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="storage_link_manual" class="btn">Storage Link Manual</button>
-        </form>
-
-        <h2>📊 Diagnósticos</h2>
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="test_env" class="btn">Test Variables ENV</button>
-        </form>
-
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="test_db" class="btn">Test Base de Datos</button>
-        </form>
-        <form method="post" style="display: inline;">
-            <button type="submit" name="action" value="test_storage" class="btn">Test Storage Link</button>
-        </form>
-
-        <?php
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-            $action = $_POST['action'];
-            
-            echo "<div class='output'>";
-            echo "<h3>Ejecutando: " . htmlspecialchars($action) . "</h3>";
-            
-            try {
-                echo "<div class='debug-info'>Iniciando ejecución de comando...</div>";
-                
-                switch ($action) {
-                    case 'migrate':
-                        echo "<pre>Ejecutando migraciones...\n";
-                        echo "Verificando conexión a DB...\n";
-                        \Illuminate\Support\Facades\DB::connection()->getPdo();
-                        echo "Conexión OK. Ejecutando migrate...\n";
-                        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true, '--verbose' => true]);
-                        $output = \Illuminate\Support\Facades\Artisan::output();
-                        echo htmlspecialchars($output);
-                        echo "\n✅ Migraciones completadas</pre>";
-                        break;
-                        
-                    case 'cache_clear':
-                        echo "<pre>";
-                        $commands = [
-                            'cache:clear' => 'Limpiando cache...',
-                            'config:clear' => 'Limpiando config cache...',
-                            'route:clear' => 'Limpiando route cache...',
-                            'view:clear' => 'Limpiando view cache...'
-                        ];
-                        
-                        foreach ($commands as $cmd => $msg) {
-                            echo $msg . "\n";
-                            \Illuminate\Support\Facades\Artisan::call($cmd);
-                            echo "✅ " . $cmd . " ejecutado\n";
-                        }
-                        echo "</pre>";
-                        break;
-
-                    case 'config_clear_manual':
-                        echo "<pre>Eliminando config cache manualmente...\n";
-                        $configCache = __DIR__ . '/../../kepler_administrador_2026/bootstrap/cache/config.php';
-                        if (file_exists($configCache)) {
-                            unlink($configCache);
-                            echo "✅ Archivo eliminado: bootstrap/cache/config.php\n";
-                        } else {
-                            echo "ℹ️ No existe config cache, nada que limpiar.\n";
-                        }
-                        echo "</pre>";
-                        break;
-                        
-                    case 'optimize':
-                        echo "<pre>Optimizando aplicación...\n";
-                        \Illuminate\Support\Facades\Artisan::call('optimize');
-                        $output = \Illuminate\Support\Facades\Artisan::output();
-                        echo htmlspecialchars($output);
-                        echo "\n✅ Optimización completada</pre>";
-                        break;
-                        
-                    case 'config_cache':
-                        echo "<pre>Cacheando configuración...\n";
-                        \Illuminate\Support\Facades\Artisan::call('config:cache');
-                        $output = \Illuminate\Support\Facades\Artisan::output();
-                        echo htmlspecialchars($output);
-                        echo "\n✅ Config cache creado</pre>";
-                        break;
-
-                    case 'route_clear':
-                        echo "<pre>Limpiando cache de rutas...\n";
-                        \Illuminate\Support\Facades\Artisan::call('route:clear');
-                        $output = \Illuminate\Support\Facades\Artisan::output();
-                        echo htmlspecialchars($output);
-                        echo "\n✅ Route cache eliminado exitosamente</pre>";
-                        break;
-
-                    case 'view_clear':
-                        echo "<pre>Limpiando cache de vistas...\n";
-                        \Illuminate\Support\Facades\Artisan::call('view:clear');
-                        $output = \Illuminate\Support\Facades\Artisan::output();
-                        echo htmlspecialchars($output);
-                        echo "\n✅ Cache de vistas limpiado</pre>";
-                        break;
-                        
-                    case 'route_cache':
-                        echo "<pre>Cacheando rutas...\n";
-                        echo "Paso 1: Limpiando cache anterior...\n";
-                        \Illuminate\Support\Facades\Artisan::call('route:clear');
-                        echo "✅ Cache anterior eliminado\n\n";
-                        
-                        echo "Paso 2: Generando nuevo cache de rutas...\n";
-                        \Illuminate\Support\Facades\Artisan::call('route:cache');
-                        $output = \Illuminate\Support\Facades\Artisan::output();
-                        echo htmlspecialchars($output);
-                        echo "\n✅ Route cache creado exitosamente</pre>";
-                        break;
-                        
-                    case 'test_db':
-                        echo "<pre>Probando conexión a base de datos...\n";
-                        $connection = \Illuminate\Support\Facades\DB::connection();
-                        $dbname = $connection->getDatabaseName();
-                        echo "✅ Conexión exitosa a: $dbname\n";
-                        
-                        // Verificar si existen tablas
-                        $tables = $connection->select("SHOW TABLES");
-                        echo "📊 Tablas encontradas: " . count($tables) . "\n";
-                        if (count($tables) > 0) {
-                            $tableNames = array_map(function($table) {
-                                return array_values((array)$table)[0];
-                            }, array_slice($tables, 0, 10));
-                            echo "Primeras 10 tablas: " . implode(', ', $tableNames) . "\n";
-                            if (count($tables) > 10) {
-                                echo "... y " . (count($tables) - 10) . " más\n";
-                            }
-                        } else {
-                            echo "❗ No se encontraron tablas. Ejecuta las migraciones.\n";
-                        }
-                        echo "</pre>";
-                        break;
-
-                    case 'storage_link':
-                        echo "<pre>Creando enlace simbólico de storage...\n";
-                        $link   = '/home2/quarkser/public_html/website_fa4a5b00/storage';
-                        $target = '/home2/quarkser/kepler_administrador_2026/storage/app/public';
-
-                        if (is_link($link)) {
-                            unlink($link);
-                            echo "🗑️ Symlink anterior eliminado\n";
-                        } elseif (is_dir($link)) {
-                            echo "⚠️ Existe un directorio en esa ruta, no se puede crear el symlink\n";
-                            break;
-                        }
-
-                        if (symlink($target, $link)) {
-                            echo "✅ Symlink creado: $link -> $target\n";
-                            // Test
-                            $testFile = $target . '/test_storage_link.txt';
-                            file_put_contents($testFile, 'Test - ' . date('Y-m-d H:i:s'));
-                            echo file_exists($link . '/test_storage_link.txt') 
-                                ? "✅ Test: Enlace funciona correctamente\n" 
-                                : "⚠️ Test: El enlace no responde\n";
-                            @unlink($testFile);
-                        } else {
-                            echo "❌ No se pudo crear. Error: " . error_get_last()['message'] . "\n";
-                        }
-                        echo "</pre>";
-                        break;
-                    case 'test_storage':
-                        echo "<pre>🔍 VERIFICACIÓN DE STORAGE LINK\n";
-                        echo "===============================\n\n";
-                        
-                        $publicStoragePath = public_path('storage');
-                        $privateStoragePath = storage_path('app/public');
-                        
-                        echo "RUTAS:\n";
-                        echo "   Public storage path:  " . $publicStoragePath . "\n";
-                        echo "   Private storage path: " . $privateStoragePath . "\n\n";
-                        
-                        echo "VERIFICACIONES:\n";
-                        
-                        // Verificar si el directorio privado existe
-                        if (is_dir($privateStoragePath)) {
-                            echo "   ✅ Directorio storage/app/public existe\n";
-                        } else {
-                            echo "   ❌ Directorio storage/app/public NO existe\n";
-                            mkdir($privateStoragePath, 0755, true);
-                            echo "   🔧 Directorio creado automáticamente\n";
-                        }
-                        
-                        // Verificar el enlace público
-                        if (is_link($publicStoragePath)) {
-                            $target = readlink($publicStoragePath);
-                            echo "   ✅ Enlace simbólico existe\n";
-                            echo "   🔗 Apunta a: " . $target . "\n";
-                            
-                            if ($target === $privateStoragePath) {
-                                echo "   ✅ Enlace apunta a la ubicación correcta\n";
-                            } else {
-                                echo "   ⚠️ Enlace apunta a ubicación incorrecta\n";
-                                echo "      Esperado: " . $privateStoragePath . "\n";
-                                echo "      Actual:   " . $target . "\n";
-                            }
-                        } elseif (is_dir($publicStoragePath)) {
-                            echo "   ⚠️ Existe directorio en lugar de enlace simbólico\n";
-                            echo "   💡 Ejecuta 'Storage Link' para crear el enlace correcto\n";
-                        } else {
-                            echo "   ❌ No existe enlace ni directorio público\n";
-                            echo "   💡 Ejecuta 'Storage Link' para crear el enlace\n";
-                        }
-                        
-                        // Test de escritura
-                        echo "\nTEST DE FUNCIONAMIENTO:\n";
-                        $testContent = 'Test file - ' . date('Y-m-d H:i:s');
-                        $testFile = 'test_storage_' . time() . '.txt';
-                        
-                        try {
-                            // Escribir usando Storage facade
-                            \Illuminate\Support\Facades\Storage::disk('public')->put($testFile, $testContent);
-                            echo "   ✅ Escritura con Storage::disk('public') exitosa\n";
-                            
-                            // Verificar acceso público
-                            if (file_exists(public_path('storage/' . $testFile))) {
-                                echo "   ✅ Archivo accesible públicamente\n";
-                                
-                                // Limpiar
-                                \Illuminate\Support\Facades\Storage::disk('public')->delete($testFile);
-                                echo "   🧹 Archivo de prueba eliminado\n";
-                            } else {
-                                echo "   ❌ Archivo NO accesible públicamente\n";
-                            }
-                            
-                        } catch (\Exception $e) {
-                            echo "   ❌ Error en test: " . $e->getMessage() . "\n";
-                        }
-                        
-                        echo "\nURL TESTING:\n";
-                        $appUrl = config('app.url');
-                        echo "   App URL: " . $appUrl . "\n";
-                        echo "   Storage URL: " . $appUrl . "/storage/\n";
-                        
-                        echo "</pre>";
-                        break;
-                        
-                    case 'test_env':
-                        echo "<pre>🔍 VERIFICACIÓN DE VARIABLES ENV\n";
-                        echo "=================================\n\n";
-                        
-                        // Variables de aplicación básicas
-                        echo "APLICACIÓN:\n";
-                        $appVars = [
-                            'APP_NAME' => config('app.name'),
-                            'APP_ENV' => config('app.env'),
-                            'APP_DEBUG' => config('app.debug') ? 'true' : 'false',
-                            'APP_URL' => config('app.url'),
-                            'APP_KEY' => config('app.key') ? 'SET' : 'NOT SET',
-                        ];
-                        
-                        foreach ($appVars as $key => $value) {
-                            echo sprintf("   %-15s: %s\n", $key, $value ?? 'NOT SET');
-                        }
-                        
-                        // Variables de base de datos
-                        echo "\nBASE DE DATOS:\n";
-                        $dbVars = [
-                            'DB_CONNECTION' => config('database.default'),
-                            'DB_HOST' => config('database.connections.mysql.host'),
-                            'DB_PORT' => config('database.connections.mysql.port'),
-                            'DB_DATABASE' => config('database.connections.mysql.database'),
-                            'DB_USERNAME' => config('database.connections.mysql.username'),
-                            'DB_PASSWORD' => config('database.connections.mysql.password'),
-                        ];
-                        
-                        foreach ($dbVars as $key => $value) {
-                            echo sprintf("   %-15s: %s\n", $key, $value ?? 'NOT SET');
-                        }
-                        
-                        // Variables de STRIPE
-                        echo "\nSTRIPE CONFIGURATION:\n";
-
-                        // Debug: mostrar valores raw primero
-                        echo "\nDEBUG - Valores raw:\n";
-                        echo "   env('VITE_STRIPE_PUBLIC_KEY'): " . (env('VITE_STRIPE_PUBLIC_KEY') ?: 'NULL') . "\n";
-                        echo "   config('services.stripe.key'): " . (config('services.stripe.key') ?: 'NULL') . "\n";
-                        echo "   config('services.stripe.secret'): " . (config('services.stripe.secret') ? 'SET (' . substr(config('services.stripe.secret'), 0, 15) . '...)' : 'NULL') . "\n";
-                        echo "   config('services.stripe.webhook.secret'): " . (config('services.stripe.webhook.secret') ? 'SET (' . substr(config('services.stripe.webhook.secret'), 0, 10) . '...)' : 'NULL') . "\n\n";
-
-                        $stripeVars = [
-                            'STRIPE_KEY (public)' => config('services.stripe.key') ? 
-                                (str_starts_with(config('services.stripe.key'), 'pk_live_') ? '✅ LIVE KEY SET' : 
-                                (str_starts_with(config('services.stripe.key'), 'pk_test_') ? '🧪 TEST KEY SET' : 'INVALID KEY')) 
-                                : 'NOT SET',
-                            'STRIPE_SECRET' => config('services.stripe.secret') ? 
-                                (str_starts_with(config('services.stripe.secret'), 'sk_live_') ? '✅ LIVE SECRET SET' : 
-                                (str_starts_with(config('services.stripe.secret'), 'sk_test_') ? '🧪 TEST SECRET SET' : 'INVALID SECRET')) 
-                                : 'NOT SET',
-                            'STRIPE_WEBHOOK_SECRET' => config('services.stripe.webhook.secret') ? 
-                                (str_starts_with(config('services.stripe.webhook.secret'), 'whsec_') ? 'SET' : 'INVALID WEBHOOK SECRET') 
-                                : 'NOT SET',
-                            'VITE_STRIPE_PUBLIC_KEY' => config('services.stripe.vite_public_key') ?
-                                (str_starts_with(env('VITE_STRIPE_PUBLIC_KEY'), 'pk_live_') ? '✅ LIVE VITE KEY SET' : 
-                                (str_starts_with(env('VITE_STRIPE_PUBLIC_KEY'), 'pk_test_') ? '🧪 TEST VITE KEY SET' : 'INVALID VITE KEY')) 
-                                : 'NOT SET',
-                        ];
-
-                        foreach ($stripeVars as $key => $value) {
-                            echo sprintf("   %-25s: %s\n", $key, $value);
-                        }
-                        
-                        // Variables de storage
-                        echo "\nSTORAGE:\n";
-                        $storageVars = [
-                            'FILESYSTEM_DISK (env)' => env('FILESYSTEM_DISK', 'NOT SET'),
-                            'FILESYSTEM_DISK (config)' => config('filesystems.default'),
-                            'PUBLIC_ROOT' => config('filesystems.disks.public.root'),
-                        ];
-                        
-                        foreach ($storageVars as $key => $value) {
-                            echo sprintf("   %-25s: %s\n", $key, $value ?? 'NOT SET');
-                        }
-                        
-                        // Verificación específica
-                        $envDisk = env('FILESYSTEM_DISK');
-                        $configDisk = config('filesystems.default');
-                        
-                        echo "\nVERIFICACIONES:\n";
-                        
-                        // Storage verification
-                        if ($envDisk === $configDisk) {
-                            echo "   ✅ FILESYSTEM_DISK: env y config coinciden ($envDisk)\n";
-                        } else {
-                            echo "   ⚠️ FILESYSTEM_DISK: diferencia detectada\n";
-                            echo "      .env: " . ($envDisk ?? 'NOT SET') . "\n";
-                            echo "      config: " . ($configDisk ?? 'NOT SET') . "\n";
-                            echo "   🔧 Ejecutar 'Cache Config' para aplicar cambios\n";
-                        }
-                        
-                        // APP_KEY verification
-                        if (!config('app.key')) {
-                            echo "   ⚠️ APP_KEY no está configurada\n";
-                        } else {
-                            echo "   ✅ APP_KEY configurada\n";
-                        }
-                        
-                        // Stripe environment consistency check
-                        $stripePublic = config('services.stripe.key');
-                        $stripeSecret = config('services.stripe.secret');
-                        $viteStripe = env('VITE_STRIPE_PUBLIC_KEY');
-                        
-                        if ($stripePublic && $stripeSecret) {
-                            $publicIsLive = str_starts_with($stripePublic, 'pk_live_');
-                            $secretIsLive = str_starts_with($stripeSecret, 'sk_live_');
-                            $viteIsLive = $viteStripe ? str_starts_with($viteStripe, 'pk_live_') : false;
-                            
-                            if ($publicIsLive === $secretIsLive) {
-                                $environment = $publicIsLive ? 'LIVE' : 'TEST';
-                                echo "   ✅ STRIPE: Todas las keys están en modo $environment\n";
-                                
-                                // Check VITE key consistency
-                                if ($viteStripe) {
-                                    if ($publicIsLive === $viteIsLive) {
-                                        echo "   ✅ STRIPE VITE: Key consistente con ambiente $environment\n";
-                                    } else {
-                                        echo "   ⚠️ STRIPE VITE: Key no coincide con el ambiente principal\n";
-                                    }
-                                } else {
-                                    echo "   ⚠️ VITE_STRIPE_PUBLIC_KEY no configurada\n";
-                                }
-                            } else {
-                                echo "   ⚠️ STRIPE: Inconsistencia - public y secret keys en diferentes ambientes\n";
-                            }
-                        } else {
-                            echo "   ⚠️ STRIPE: Keys faltantes\n";
-                        }
-                        
-                        // Environment recommendation
-                        $appEnv = config('app.env');
-                        if ($appEnv === 'production' && $stripePublic && !str_starts_with($stripePublic, 'pk_live_')) {
-                            echo "   ⚠️ ADVERTENCIA: APP_ENV=production pero usando keys de TEST\n";
-                        } elseif ($appEnv !== 'production' && $stripePublic && str_starts_with($stripePublic, 'pk_live_')) {
-                            echo "   ⚠️ ADVERTENCIA: APP_ENV=$appEnv pero usando keys de LIVE\n";
-                        }
-                        
-                        echo "</pre>";
-                        break;
-                        
-                    default:
-                        echo "<p class='error'>Acción no reconocida.</p>";
-                }
-                
-            } catch (Exception $e) {
-                echo "<div class='error'>";
-                echo "<h3>❌ Error ejecutando: " . htmlspecialchars($action) . "</h3>";
-                echo "<strong>Mensaje:</strong> " . htmlspecialchars($e->getMessage()) . "<br>";
-                echo "<strong>Archivo:</strong> " . htmlspecialchars($e->getFile()) . "<br>";
-                echo "<strong>Línea:</strong> " . $e->getLine() . "<br>";
-                echo "<details><summary>Ver stack trace completo</summary>";
-                echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
-                echo "</details>";
-                echo "</div>";
-            } catch (Error $e) {
-                echo "<div class='error'>";
-                echo "<h3>❌ Error Fatal ejecutando: " . htmlspecialchars($action) . "</h3>";
-                echo "<strong>Mensaje:</strong> " . htmlspecialchars($e->getMessage()) . "<br>";
-                echo "<strong>Archivo:</strong> " . htmlspecialchars($e->getFile()) . "<br>";
-                echo "<strong>Línea:</strong> " . $e->getLine() . "<br>";
-                echo "</div>";
-            }
-            
-            echo "</div>";
-        }
-        ?>
-        
-        <hr>
-        <div class="debug-info">
-            <strong>📍 Información del Sistema:</strong><br>
-            Ruta del sistema: <?php echo realpath(__DIR__ . '/../system'); ?><br>
-            PHP Version: <?php echo PHP_VERSION; ?><br>
-            Request URL: <?php echo $_SERVER['REQUEST_URI'] ?? 'No disponible'; ?><br>
-            Server Name: <?php echo $_SERVER['SERVER_NAME'] ?? 'No disponible'; ?><br>
-            Memory Usage: <?php echo round(memory_get_usage() / 1024 / 1024, 2); ?> MB<br>
-            <strong>🗑️ RECUERDA:</strong> Eliminar este archivo después de las actualizaciones
-        </div>
+    <div class="warning">
+        ⚠️ &nbsp;Este archivo debe eliminarse después de cada sesión de mantenimiento. No dejes este archivo en producción.
     </div>
+
+    <div class="status">
+        Laravel:
+        <?php if ($laravelOk): ?>
+            <span class="ok">✅ cargado correctamente</span> · <?= config('app.name') ?> · <?= config('app.env') ?>
+        <?php else: ?>
+            <span class="err">❌ error al cargar: <?= htmlspecialchars($laravelError) ?></span>
+        <?php endif; ?>
+    </div>
+
+    <?php if ($laravelOk): ?>
+    <div class="grid">
+
+        <form class="action-form" method="POST">
+            <button type="submit" name="action" value="env">
+                <span class="icon">🔍</span>
+                <span class="label">Variables ENV</span>
+                <span class="desc">App, DB, Storage, Servicios</span>
+            </button>
+        </form>
+
+        <form class="action-form" method="POST">
+            <button type="submit" name="action" value="db">
+                <span class="icon">🗄️</span>
+                <span class="label">Test Base de Datos</span>
+                <span class="desc">Conexión + listado de tablas</span>
+            </button>
+        </form>
+
+        <form class="action-form" method="POST">
+            <button type="submit" name="action" value="migrate_status">
+                <span class="icon">📋</span>
+                <span class="label">Estado Migraciones</span>
+                <span class="desc">php artisan migrate:status</span>
+            </button>
+        </form>
+
+        <form class="action-form" method="POST" onsubmit="return confirm('¿Ejecutar migraciones pendientes en producción?');">
+            <button class="danger" type="submit" name="action" value="migrate">
+                <span class="icon">🚀</span>
+                <span class="label">Migrar</span>
+                <span class="desc">php artisan migrate --force</span>
+            </button>
+        </form>
+
+        <form class="action-form" method="POST">
+            <button type="submit" name="action" value="clear">
+                <span class="icon">🧹</span>
+                <span class="label">Limpiar Caché</span>
+                <span class="desc">Config, rutas, vistas, eventos</span>
+            </button>
+        </form>
+
+        <form class="action-form" method="POST">
+            <button type="submit" name="action" value="optimize">
+                <span class="icon">⚡</span>
+                <span class="label">Optimize</span>
+                <span class="desc">php artisan optimize</span>
+            </button>
+        </form>
+
+        <form class="action-form" method="POST">
+            <button type="submit" name="action" value="storage">
+                <span class="icon">📁</span>
+                <span class="label">Storage</span>
+                <span class="desc">Rutas, permisos, test escritura</span>
+            </button>
+        </form>
+
+    </div>
+    <?php endif; ?>
+
+    <?php if ($result): ?>
+    <div class="output-wrap">
+        <h2>Resultado</h2>
+        <pre><?= $result ?></pre>
+    </div>
+    <?php endif; ?>
+
+    <footer>
+        APP_ROOT: <?= APP_ROOT ?> &nbsp;·&nbsp;
+        PUBLIC_ROOT: <?= PUBLIC_ROOT ?> &nbsp;·&nbsp;
+        Memory: <?= round(memory_get_usage()/1024/1024, 1) ?> MB
+    </footer>
+
+</div>
 </body>
 </html>

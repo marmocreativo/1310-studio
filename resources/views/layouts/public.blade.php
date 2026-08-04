@@ -455,8 +455,7 @@
                     </p>
                     <div class="flex flex-wrap justify-center gap-4">
                         @foreach ([
-                            ['label' => 'Instagram', 'href' => '#'],
-                            ['label' => 'Facebook',  'href' => '#'],
+                            ['label' => 'Instagram', 'href' => 'https://www.instagram.com/1310___studio'],
                             ['label' => 'Términos',  'route' => 'paginas.show', 'param' => 'terminos-y-condiciones'],
                             ['label' => 'Privacidad','route' => 'paginas.show', 'param' => 'aviso-de-privacidad'],
                         ] as $link)

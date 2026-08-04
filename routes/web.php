@@ -73,7 +73,7 @@ Route::prefix('admin')
         Route::resource('productos', AdminProductosController::class);
         Route::post('productos/{producto}/galeria', [AdminProductosController::class, 'galeriaStore'])->name('productos.galeria.store');
         Route::delete('productos/{producto}/galeria/{imagen}', [AdminProductosController::class, 'galeriaDestroy'])->name('productos.galeria.destroy');
-        Route::patch('productos/{producto}/galeria/{imagen}/orden', [AdminProductosController::class, 'galeriaOrden'])->name('productos.galeria.orden');
+        Route::patch('productos/{producto}/galeria/orden', [AdminProductosController::class, 'galeriaOrden'])->name('productos.galeria.orden');
         Route::put('productos/{producto}/categorias', [AdminProductosController::class, 'syncCategorias'])->name('productos.categorias.sync');
         Route::put('productos/{producto}/flores', [AdminProductosController::class, 'syncFlores'])->name('productos.flores.sync');
 
@@ -96,7 +96,9 @@ Route::prefix('admin')
             Route::post('/skus', [AdminVariacionesController::class, 'skuStore'])->name('skus.store');
             Route::patch('/skus/{sku}', [AdminVariacionesController::class, 'skuUpdate'])->name('skus.update');
             Route::delete('/skus/{sku}', [AdminVariacionesController::class, 'skuDestroy'])->name('skus.destroy');
-            Route::post('/skus/{sku}/imagen', [AdminVariacionesController::class, 'skuImagen'])->name('skus.imagen');
+            Route::post('/skus/{sku}/galeria', [AdminVariacionesController::class, 'skuGaleriaStore'])->name('skus.galeria.store');
+            Route::delete('/skus/{sku}/galeria/{imagen}', [AdminVariacionesController::class, 'skuGaleriaDestroy'])->name('skus.galeria.destroy');
+            Route::patch('/skus/{sku}/galeria/orden', [AdminVariacionesController::class, 'skuGaleriaOrden'])->name('skus.galeria.orden');
         });
 
         // Defaults (catálogo global)

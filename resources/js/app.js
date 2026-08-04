@@ -1,9 +1,10 @@
 document.addEventListener('alpine:init', () => {
-    Alpine.data('galeriaUploader', ({ uploadUrl, csrfToken, inicial }) => ({
+    Alpine.data('galeriaUploader', ({ uploadUrl, reorderUrl, csrfToken, inicial }) => ({
         imagenes: inicial,
         drag:     false,
         subiendo: false,
         error:    '',
+        dragging: null,
 
         drop(e) {
             this.drag = false;
@@ -60,6 +61,40 @@ document.addEventListener('alpine:init', () => {
                     .map((i, idx) => ({ ...i, portada: idx === 0 }));
             } catch (e) {
                 this.error = 'Error al eliminar la imagen.';
+            }
+        },
+
+        // ── Reordenar por arrastre ───────────────────────────────────────────
+        dragStart(img) {
+            this.dragging = img;
+        },
+
+        dragOverImg(img) {
+            if (!this.dragging || this.dragging.id === img.id) return;
+            const from = this.imagenes.indexOf(this.dragging);
+            const to   = this.imagenes.indexOf(img);
+            this.imagenes.splice(from, 1);
+            this.imagenes.splice(to, 0, this.dragging);
+        },
+
+        async dragEnd() {
+            if (!this.dragging) return;
+            this.dragging = null;
+            this.imagenes = this.imagenes.map((i, idx) => ({ ...i, portada: idx === 0 }));
+            if (!reorderUrl) return;
+
+            try {
+                await fetch(reorderUrl, {
+                    method:  'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept':       'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ orden: this.imagenes.map(i => i.id) }),
+                });
+            } catch (e) {
+                this.error = 'No se pudo guardar el nuevo orden.';
             }
         },
     }));
@@ -146,6 +181,9 @@ document.addEventListener('alpine:init', () => {
         errorTipo:       '',
         errorGlobal:     '',
         mensajeGenerar:  '',
+        skuExpandido:      null,
+        draggingImgSku:    null,
+        subiendoGaleriaSku: null,
 
         async init() {
             await Promise.all([this.cargarDatos(), this.cargarDefaults()]);
@@ -213,8 +251,10 @@ document.addEventListener('alpine:init', () => {
         urlTipo(tipo)          { return `${this.urlBase()}/tipos/${tipo.id}`; },
         urlOpcionStore(tipo)   { return `${this.urlBase()}/tipos/${tipo.id}/opciones`; },
         urlOpcion(opcion)      { return `${this.urlBase()}/opciones/${opcion.id}`; },
-        urlSku(sku)            { return `${config.urlSkuStore}/${sku.id}`; },
-        urlSkuImagen(sku)      { return `${config.urlSkuStore}/${sku.id}/imagen`; },
+        urlSku(sku)              { return `${config.urlSkuStore}/${sku.id}`; },
+        urlSkuGaleria(sku)       { return `${config.urlSkuStore}/${sku.id}/galeria`; },
+        urlSkuGaleriaImg(sku,img){ return `${config.urlSkuStore}/${sku.id}/galeria/${img.id}`; },
+        urlSkuGaleriaOrden(sku)  { return `${config.urlSkuStore}/${sku.id}/galeria/orden`; },
 
         // ── Defaults ──────────────────────────────────────────────────────────
         async importarDefault(def) {
@@ -332,14 +372,56 @@ document.addEventListener('alpine:init', () => {
             this.skus = this.skus.filter(s => s.id !== sku.id);
         },
 
-        async subirImagenSku(sku, event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const form = new FormData();
-            form.append('imagen', file);
-            const data = await this.api(this.urlSkuImagen(sku), 'POST', form);
+        toggleGaleriaSku(sku) {
+            this.skuExpandido = this.skuExpandido === sku.id ? null : sku.id;
+        },
+
+        async subirGaleriaSku(sku, files) {
+            if (!files.length) return;
+            this.subiendoGaleriaSku = sku.id;
+            try {
+                const form = new FormData();
+                const comprimidas = await Promise.all(
+                    Array.from(files).map(f => comprimirImagen(f, 1200, 0.8))
+                );
+                comprimidas.forEach(f => form.append('imagenes[]', f));
+                const data = await this.api(this.urlSkuGaleria(sku), 'POST', form);
+                if (!data) return;
+                sku.galeria = data.galeria;
+                sku.imagen  = data.galeria[0]?.url ?? null;
+            } finally {
+                this.subiendoGaleriaSku = null;
+            }
+        },
+
+        async eliminarImagenGaleriaSku(sku, img) {
+            if (!confirm('¿Eliminar esta imagen?')) return;
+            const data = await this.api(this.urlSkuGaleriaImg(sku, img), 'DELETE');
             if (!data) return;
-            sku.imagen = data.url;
+            sku.galeria = sku.galeria.filter(i => i.id !== img.id);
+            sku.imagen  = sku.galeria[0]?.url ?? null;
+        },
+
+        // ── Reordenar galería de la combinación por arrastre ─────────────────
+        dragStartSkuImg(img) {
+            this.draggingImgSku = img;
+        },
+
+        dragOverSkuImg(sku, img) {
+            if (!this.draggingImgSku || this.draggingImgSku.id === img.id) return;
+            const from = sku.galeria.indexOf(this.draggingImgSku);
+            const to   = sku.galeria.indexOf(img);
+            sku.galeria.splice(from, 1);
+            sku.galeria.splice(to, 0, this.draggingImgSku);
+        },
+
+        async dragEndSkuImg(sku) {
+            if (!this.draggingImgSku) return;
+            this.draggingImgSku = null;
+            sku.imagen = sku.galeria[0]?.url ?? null;
+            await this.api(this.urlSkuGaleriaOrden(sku), 'PATCH', {
+                orden: sku.galeria.map(i => i.id),
+            });
         },
     }));
 });

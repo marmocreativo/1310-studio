@@ -12,7 +12,14 @@ class ProductosController extends Controller
             abort(404);
         }
 
-        $producto->load(['galeria', 'categorias', 'flores.galeria']);
+        $producto->load([
+            'galeria',
+            'categorias',
+            'flores.galeria',
+            'variacionTipos.opciones',
+            'variacionSkus.opciones',
+            'variacionSkus.galeria',
+        ]);
 
         $relacionados = Producto::activos()
             ->whereHas('categorias', function ($q) use ($producto) {

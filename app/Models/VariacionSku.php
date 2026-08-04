@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VariacionSku extends Model
 {
@@ -34,6 +35,11 @@ class VariacionSku extends Model
     public function opciones(): BelongsToMany
     {
         return $this->belongsToMany(VariacionOpcion::class, 'variacion_sku_opciones', 'id_sku', 'id_opcion');
+    }
+
+    public function galeria(): HasMany
+    {
+        return $this->hasMany(VariacionSkuGaleria::class, 'id_sku')->orderBy('orden');
     }
 
     // Devuelve label legible: "3 ramas / Blanca / Rosa"

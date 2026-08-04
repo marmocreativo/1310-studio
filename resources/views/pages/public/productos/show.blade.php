@@ -3,6 +3,8 @@
 @php
     // ── Control de modo de compra ──────────────────────────────────────────
     $modoCarrito = $conf['activar_tienda'] ?? false;
+
+    $galeriaProductoData = $producto->galeria->map(fn($img) => Storage::disk('public')->url($img->imagen))->values()->toJson();
 @endphp
 
     <div class="py-16 px-8 max-w-[1440px] mx-auto">
@@ -27,80 +29,57 @@
                 activa: 0,
                 lightbox: false,
                 zoom: false,
-                total: {{ $producto->galeria->count() }},
-                imagenSku: null,
-                next() { if(!this.imagenSku){ this.activa = (this.activa + 1) % this.total; this.zoom = false; } },
-                prev() { if(!this.imagenSku){ this.activa = (this.activa - 1 + this.total) % this.total; this.zoom = false; } },
+                galeriaProducto: {{ $galeriaProductoData }},
+                galeriaSku: null,
+                get imagenes() { return (this.galeriaSku && this.galeriaSku.length) ? this.galeriaSku : this.galeriaProducto },
+                get total() { return this.imagenes.length },
+                next() { this.activa = (this.activa + 1) % this.total; this.zoom = false; },
+                prev() { this.activa = (this.activa - 1 + this.total) % this.total; this.zoom = false; },
             }"
-            @sku-imagen.window="imagenSku = $event.detail.url"
-            @sku-imagen-clear.window="imagenSku = null"
+            @sku-galeria.window="galeriaSku = $event.detail.galeria; activa = 0"
+            @sku-galeria-clear.window="galeriaSku = null; activa = 0"
             @keydown.escape.window="lightbox = false; zoom = false"
             @keydown.arrow-right.window="if(lightbox) next()"
             @keydown.arrow-left.window="if(lightbox) prev()">
 
-            {{-- ─── GALERÍA ─────────────────────────────── --}}
+                        {{-- ─── GALERÍA ─────────────────────────────── --}}
             <div>
                 <div class="aspect-square overflow-hidden bg-surface-container-low mb-4 relative group cursor-zoom-in"
-                     @click="lightbox = true">
+                     @click="if (total) lightbox = true">
 
-                    <template x-if="imagenSku">
-                        <img :src="imagenSku"
+                    <template x-if="total">
+                        <img :src="imagenes[activa]"
                              alt="{{ $producto->nombre }}"
                              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     </template>
 
-                    <template x-if="!imagenSku">
-                        <div class="w-full h-full">
-                            @forelse ($producto->galeria as $i => $img)
-                                <img src="{{ Storage::disk('public')->url($img->imagen) }}"
-                                     alt="{{ $producto->nombre }}"
-                                     x-show="activa === {{ $i }}"
-                                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                            @empty
-                                <div class="w-full h-full flex items-center justify-center">
-                                    <flux:icon name="photo" class="w-16 h-16 text-outline-variant" />
-                                </div>
-                            @endforelse
+                    <template x-if="!total">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <flux:icon name="photo" class="w-16 h-16 text-outline-variant" />
                         </div>
                     </template>
 
-                    @if ($producto->galeria->count() > 1)
-                        <div x-show="!imagenSku"
-                             class="absolute bottom-4 right-4 bg-black/50 text-white text-[10px] tracking-[0.1em] px-3 py-1">
-                            <span x-text="activa + 1"></span> / {{ $producto->galeria->count() }}
-                        </div>
-                    @endif
+                    <div x-show="total > 1"
+                         class="absolute bottom-4 right-4 bg-black/50 text-white text-[10px] tracking-[0.1em] px-3 py-1">
+                        <span x-text="activa + 1"></span> / <span x-text="total"></span>
+                    </div>
+
+                    <div x-show="galeriaSku"
+                         class="absolute top-4 left-4 bg-on-surface text-surface text-[10px] tracking-[0.1em] uppercase px-3 py-1">
+                        Variación seleccionada
+                    </div>
                 </div>
 
-                <template x-if="imagenSku">
-                    <div class="flex items-end gap-3 mb-3">
-                        <div class="flex-shrink-0 w-20 h-20 overflow-hidden border-2 border-on-surface">
-                            <img :src="imagenSku" alt="Variación seleccionada" class="w-full h-full object-cover">
-                        </div>
-                        @if ($producto->galeria->count() > 0)
-                            <button type="button"
-                                @click="imagenSku = null; activa = 0"
-                                class="text-[10px] tracking-[0.1em] uppercase text-outline hover:text-on-surface transition-colors underline pb-1">
-                                Ver galería
-                            </button>
-                        @endif
-                    </div>
-                </template>
-
-                @if ($producto->galeria->count() > 1)
-                    <div class="flex gap-3 overflow-x-auto pb-1" x-show="!imagenSku">
-                        @foreach ($producto->galeria as $i => $img)
-                            <button type="button"
-                                @click="activa = {{ $i }}"
-                                class="flex-shrink-0 w-20 h-20 overflow-hidden border-2 transition-colors duration-200"
-                                :class="activa === {{ $i }} ? 'border-primary' : 'border-transparent hover:border-outline-variant'">
-                                <img src="{{ Storage::disk('public')->url($img->imagen) }}"
-                                     alt="{{ $producto->nombre }}"
-                                     class="w-full h-full object-cover">
-                            </button>
-                        @endforeach
-                    </div>
-                @endif
+                <div class="flex gap-3 overflow-x-auto pb-1" x-show="total > 1">
+                    <template x-for="(img, i) in imagenes" :key="i">
+                        <button type="button"
+                            @click="activa = i"
+                            class="flex-shrink-0 w-20 h-20 overflow-hidden border-2 transition-colors duration-200"
+                            :class="activa === i ? 'border-primary' : 'border-transparent hover:border-outline-variant'">
+                            <img :src="img" alt="{{ $producto->nombre }}" class="w-full h-full object-cover">
+                        </button>
+                    </template>
+                </div>
             </div>
 
             {{-- ─── INFO ────────────────────────────────── --}}
@@ -131,7 +110,7 @@
                         'precio_venta' => (float) $sku->precio_venta,
                         'precio_lista' => $sku->precio_lista ? (float) $sku->precio_lista : null,
                         'estado'       => $sku->estado,
-                        'imagen'       => $sku->imagen ? Storage::disk('public')->url($sku->imagen) : null,
+                        'galeria'      => $sku->galeria->map(fn($img) => Storage::disk('public')->url($img->imagen))->values()->toArray(),
                         'opciones'     => $sku->opciones->pluck('id')->values()->toArray(),
                     ])->values()->toJson();
 
@@ -366,43 +345,31 @@
                      :class="zoom ? 'cursor-zoom-out' : 'cursor-zoom-in'"
                      @click="zoom = !zoom">
 
-                    <template x-if="imagenSku">
-                        <img :src="imagenSku"
+                    <template x-if="total">
+                        <img :src="imagenes[activa]"
                              alt="{{ $producto->nombre }}"
                              :class="zoom ? 'scale-[2]' : 'scale-100'"
                              class="max-h-screen max-w-full object-contain transition-transform duration-500 select-none">
                     </template>
-
-                    <template x-if="!imagenSku">
-                        <div class="w-full h-full flex items-center justify-center">
-                            @foreach ($producto->galeria as $i => $img)
-                                <img src="{{ Storage::disk('public')->url($img->imagen) }}"
-                                     alt="{{ $producto->nombre }}"
-                                     x-show="activa === {{ $i }}"
-                                     :class="zoom ? 'scale-[2]' : 'scale-100'"
-                                     class="max-h-screen max-w-full object-contain transition-transform duration-500 select-none">
-                            @endforeach
-                        </div>
-                    </template>
                 </div>
 
-                @if($producto->galeria->count() > 1)
-                    <div x-show="!imagenSku"
-                         class="absolute top-6 left-1/2 -translate-x-1/2 text-white/50 text-[11px] tracking-[0.2em] uppercase">
-                        <span x-text="activa + 1"></span> / {{ $producto->galeria->count() }}
-                    </div>
-                @endif
+                <div x-show="total > 1"
+                     class="absolute top-6 left-1/2 -translate-x-1/2 text-white/50 text-[11px] tracking-[0.2em] uppercase">
+                    <span x-text="activa + 1"></span> / <span x-text="total"></span>
+                </div>
 
-                @if($producto->galeria->count() > 1)
-                    <button type="button" x-show="!imagenSku" @click.stop="prev()"
+                <template x-if="total > 1">
+                    <button type="button" @click.stop="prev()"
                             class="absolute left-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors">
                         <flux:icon name="chevron-left" class="w-10 h-10" />
                     </button>
-                    <button type="button" x-show="!imagenSku" @click.stop="next()"
+                </template>
+                <template x-if="total > 1">
+                    <button type="button" @click.stop="next()"
                             class="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors">
                         <flux:icon name="chevron-right" class="w-10 h-10" />
                     </button>
-                @endif
+                </template>
 
             </div>
 
@@ -586,10 +553,10 @@
 
             actualizarImagenGaleria() {
                 const sku = this.skuActivo;
-                if (sku && sku.imagen) {
-                    window.dispatchEvent(new CustomEvent('sku-imagen', { detail: { url: sku.imagen } }));
+                if (sku && sku.galeria && sku.galeria.length) {
+                    window.dispatchEvent(new CustomEvent('sku-galeria', { detail: { galeria: sku.galeria } }));
                 } else {
-                    window.dispatchEvent(new CustomEvent('sku-imagen-clear'));
+                    window.dispatchEvent(new CustomEvent('sku-galeria-clear'));
                 }
             },
 

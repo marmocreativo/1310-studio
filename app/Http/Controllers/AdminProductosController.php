@@ -177,10 +177,16 @@ class AdminProductosController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function galeriaOrden(Request $request, Producto $producto, GaleriaProducto $imagen)
+    public function galeriaOrden(Request $request, Producto $producto)
     {
-        $request->validate(['orden' => 'required|integer|min:0']);
-        $imagen->update(['orden' => $request->orden]);
+        $data = $request->validate([
+            'orden'   => 'required|array',
+            'orden.*' => 'integer|exists:galeria_productos,id',
+        ]);
+
+        foreach ($data['orden'] as $index => $id) {
+            GaleriaProducto::where('id', $id)->where('id_producto', $producto->id)->update(['orden' => $index]);
+        }
 
         return response()->json(['ok' => true]);
     }

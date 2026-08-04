@@ -54,20 +54,10 @@
             @endif
 
             {{-- Overlay oscuro genérico --}}
-            <div class="absolute inset-0 bg-black/25"></div>
-
-            {{-- ── Overlay de imagen (solo tipo capas) ── --}}
-            @if($slide->tipo->value === 'capas' && $slide->imagen_overlay_url)
-                <div class="absolute bottom-0 right-0 h-full aspect-square pointer-events-none">
-                    <img src="{{ $slide->imagen_overlay_url }}"
-                        alt=""
-                        class="w-full h-full object-cover object-top select-none"
-                        style="animation: flor-drift 8s ease-in-out infinite;">
-                </div>
-            @endif
+            <div class="absolute inset-0 bg-black/25 z-10"></div>
 
             {{-- ── Copy centrado ── --}}
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center space-y-8 px-4">
+            <div class="absolute inset-0 z-20 flex flex-col items-center justify-center text-center space-y-8 px-4">
 
                 @if($slide->logo_url)
                     <img src="{{ $slide->logo_url }}"
@@ -99,6 +89,16 @@
                 @endif
 
             </div>
+
+            {{-- ── Overlay de imagen (solo tipo capas) ── --}}
+            @if($slide->tipo->value === 'capas' && $slide->imagen_overlay_url)
+                <div class="hero-overlay-img absolute bottom-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+                    <img src="{{ $slide->imagen_overlay_url }}"
+                        alt=""
+                        class="w-full h-full object-cover object-top select-none"
+                        style="animation: flor-drift 8s ease-in-out infinite;">
+                </div>
+            @endif
 
         </div>
 
@@ -413,6 +413,19 @@
     }
     @keyframes flor-drift {
         0%, 100% { transform: translateX(0px); }
-        50%       { transform: translateX(12px); }
+        50%       { transform: translateX(50px); }
+    }
+
+    /* Overlay del hero de capas: en móvil manda el alto, el ancho crece libre */
+    .hero-overlay-img {
+        height: 100%;
+        width: 150vw;
+    }
+
+    @media (min-width: 768px) {
+        .hero-overlay-img {
+            width: auto;
+            aspect-ratio: 1 / 1;
+        }
     }
 </style>

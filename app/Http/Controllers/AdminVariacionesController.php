@@ -7,6 +7,7 @@ use App\Models\VariacionTipo;
 use App\Models\VariacionOpcion;
 use App\Models\VariacionSku;
 use App\Models\VariacionTipoDefault;
+use App\Models\VariacionSkuGaleria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
@@ -70,8 +71,8 @@ class AdminVariacionesController extends Controller
 
         // Eliminar imágenes de SKUs huérfanos
         foreach ($producto->variacionSkus as $sku) {
-            if ($sku->imagen) {
-                Storage::disk('public')->delete($sku->imagen);
+            foreach ($sku->galeria as $img) {
+                Storage::disk('public')->delete($img->imagen);
             }
         }
 
@@ -215,33 +216,72 @@ class AdminVariacionesController extends Controller
     {
         $this->autorizarSku($sku, $producto);
 
-        if ($sku->imagen) {
-            Storage::disk('public')->delete($sku->imagen);
+        foreach ($sku->galeria as $img) {
+            Storage::disk('public')->delete($img->imagen);
         }
 
-        $sku->delete();
+        $sku->delete(); // cascade elimina variacion_sku_galeria
 
         return response()->json(['ok' => true]);
     }
 
-    public function skuImagen(Request $request, Producto $producto, VariacionSku $sku)
+    public function skuGaleriaStore(Request $request, Producto $producto, VariacionSku $sku)
     {
         $this->autorizarSku($sku, $producto);
 
-        $request->validate(['imagen' => 'required|image|max:2048']);
+        $request->validate([
+            'imagenes'   => 'required|array',
+            'imagenes.*' => 'image|max:2048',
+        ]);
 
-        if ($sku->imagen) {
-            Storage::disk('public')->delete($sku->imagen);
+        $orden = $sku->galeria()->max('orden') ?? 0;
+
+        foreach ($request->file('imagenes') as $file) {
+            $orden++;
+            $sku->galeria()->create([
+                'imagen' => $this->procesarImagen($file, 'variaciones/skus'),
+                'estado' => true,
+                'orden'  => $orden,
+            ]);
         }
 
-        $sku->update([
-            'imagen' => $this->procesarImagen($request->file('imagen'), 'variaciones/skus'),
-        ]);
+        $this->sincronizarPortadaSku($sku);
 
         return response()->json([
-            'ok'  => true,
-            'url' => Storage::disk('public')->url($sku->imagen),
+            'ok'      => true,
+            'galeria' => $this->formatGaleriaSku($sku->fresh()),
         ]);
+    }
+
+    public function skuGaleriaDestroy(Producto $producto, VariacionSku $sku, VariacionSkuGaleria $imagen)
+    {
+        $this->autorizarSku($sku, $producto);
+        abort_if($imagen->id_sku !== $sku->id, 403);
+
+        Storage::disk('public')->delete($imagen->imagen);
+        $imagen->delete();
+
+        $this->sincronizarPortadaSku($sku);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function skuGaleriaOrden(Request $request, Producto $producto, VariacionSku $sku)
+    {
+        $this->autorizarSku($sku, $producto);
+
+        $data = $request->validate([
+            'orden'   => 'required|array',
+            'orden.*' => 'integer|exists:variacion_sku_galeria,id',
+        ]);
+
+        foreach ($data['orden'] as $index => $id) {
+            VariacionSkuGaleria::where('id', $id)->where('id_sku', $sku->id)->update(['orden' => $index]);
+        }
+
+        $this->sincronizarPortadaSku($sku->fresh());
+
+        return response()->json(['ok' => true]);
     }
 
     // Genera automáticamente todos los SKUs posibles (producto cartesiano de opciones)
@@ -303,7 +343,7 @@ class AdminVariacionesController extends Controller
             ->get();
 
         $skus = $producto->variacionSkus()
-            ->with('opciones')
+            ->with(['opciones', 'galeria'])
             ->orderBy('id')
             ->get();
 
@@ -328,7 +368,7 @@ class AdminVariacionesController extends Controller
         return [
             'id'     => $opcion->id,
             'nombre' => $opcion->nombre,
-            'imagen' => $opcion->imagen ? Storage::disk('public')->url($sku->imagen) : null,
+            'imagen' => $opcion->imagen ? Storage::disk('public')->url($opcion->imagen) : null,
             'orden'  => $opcion->orden,
         ];
     }
@@ -343,8 +383,28 @@ class AdminVariacionesController extends Controller
             'estado'       => $sku->estado,
             'notas'        => $sku->notas,
             'imagen'       => $sku->imagen ? Storage::disk('public')->url($sku->imagen) : null,
+            'galeria'      => $sku->galeria->map(fn($img) => [
+                'id'    => $img->id,
+                'url'   => Storage::disk('public')->url($img->imagen),
+                'orden' => $img->orden,
+            ]),
             'opciones'     => $sku->opciones->pluck('id'),
         ];
+    }
+
+    private function sincronizarPortadaSku(VariacionSku $sku): void
+    {
+        $portada = $sku->galeria()->orderBy('orden')->first();
+        $sku->update(['imagen' => $portada?->imagen]);
+    }
+
+    private function formatGaleriaSku(VariacionSku $sku): array
+    {
+        return $sku->galeria()->orderBy('orden')->get()->map(fn($img) => [
+            'id'    => $img->id,
+            'url'   => Storage::disk('public')->url($img->imagen),
+            'orden' => $img->orden,
+        ])->toArray();
     }
 
     private function limpiarSkusHuerfanos(Producto $producto): void
@@ -358,8 +418,8 @@ class AdminVariacionesController extends Controller
                 ->count();
 
             if ($tiposCubiertos < $totalTipos) {
-                if ($sku->imagen) {
-                    Storage::disk('public')->delete($sku->imagen);
+                foreach ($sku->galeria as $img) {
+                    Storage::disk('public')->delete($img->imagen);
                 }
                 $sku->delete();
             }
