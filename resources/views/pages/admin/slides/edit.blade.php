@@ -34,7 +34,12 @@
         action="{{ route('admin.slides.update', $slide) }}"
         enctype="multipart/form-data"
         class="flex gap-6 items-start"
-        x-data="slideForm()"
+        x-data="slideForm({
+            tipo:       @js(old('tipo', $slide->tipo->value)),
+            titulo:     @js(old('titulo', $slide->titulo)),
+            caption:    @js(old('caption', $slide->caption)),
+            textoBoton: @js(old('texto_boton', $slide->texto_boton)),
+        })"
     >
         @csrf
         @method('PUT')
@@ -48,20 +53,20 @@
 
                 <flux:field>
                     <flux:label>Título <flux:badge size="sm" color="zinc">Opcional</flux:badge></flux:label>
-                    <flux:input name="titulo" value="{{ old('titulo', $slide->titulo) }}" placeholder="Texto principal del slide" />
+                    <flux:input name="titulo" x-model="campos.titulo" placeholder="Texto principal del slide" />
                     <flux:error name="titulo" />
                 </flux:field>
 
                 <flux:field>
                     <flux:label>Caption <flux:badge size="sm" color="zinc">Opcional</flux:badge></flux:label>
-                    <flux:input name="caption" value="{{ old('caption', $slide->caption) }}" placeholder="Subtítulo o etiqueta sobre el título" />
+                    <flux:input name="caption" x-model="campos.caption" placeholder="Subtítulo o etiqueta sobre el título" />
                     <flux:error name="caption" />
                 </flux:field>
 
                 <div class="grid grid-cols-2 gap-4">
                     <flux:field>
                         <flux:label>Texto del botón</flux:label>
-                        <flux:input name="texto_boton" value="{{ old('texto_boton', $slide->texto_boton) }}" placeholder="Explorar colección" />
+                        <flux:input name="texto_boton" x-model="campos.texto_boton" placeholder="Explorar colección" />
                         <flux:error name="texto_boton" />
                     </flux:field>
                     <flux:field>
@@ -73,86 +78,41 @@
             </div>
 
             {{-- Imagen de fondo --}}
-            <div class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-5">
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-3">
                 <div>
                     <flux:heading size="sm" class="text-zinc-700">Imagen de fondo</flux:heading>
                     <flux:text size="sm" class="text-zinc-400 mt-1">Se recortará y escalará a <strong>1920 × 1080 px</strong>. Deja vacío para mantener la actual.</flux:text>
                 </div>
 
-                @if($slide->imagen_fondo_url)
-                    <div class="relative rounded-lg overflow-hidden" x-show="!previews.fondo">
-                        <img src="{{ $slide->imagen_fondo_url }}" class="w-full h-40 object-cover" alt="Fondo actual">
-                        <div class="absolute inset-0 bg-black/30 flex items-end p-3">
-                            <flux:badge color="zinc" size="sm">Imagen actual</flux:badge>
-                        </div>
-                    </div>
-                @endif
-
-                <div
-                    x-on:dragover.prevent="dragover = true"
-                    x-on:dragleave="dragover = false"
-                    x-on:drop.prevent="handleDrop($event, 'fondo')"
-                    :class="dragover ? 'border-[#927F64] bg-[#927F64]/5' : 'border-zinc-300'"
-                    class="relative rounded-lg border-2 border-dashed transition-colors"
+                <input
+                    type="file"
+                    name="imagen_fondo"
+                    accept="image/*"
+                    x-on:change="previewFile($event, 'fondo')"
+                    class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 transition-colors cursor-pointer"
                 >
-                    <input
-                        type="file"
-                        name="imagen_fondo"
-                        accept="image/*"
-                        class="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
-                        x-on:change="previewFile($event, 'fondo')"
-                    >
-                    <div class="p-6 text-center" x-show="!previews.fondo">
-                        <flux:icon name="arrow-up-tray" class="size-8 mx-auto mb-2 text-zinc-300" />
-                        <flux:text size="sm" class="text-zinc-500">Subir nueva imagen de fondo</flux:text>
-                    </div>
-                    <div x-show="previews.fondo" class="p-2">
-                        <img :src="previews.fondo" class="w-full h-40 object-cover rounded-md" />
-                    </div>
-                </div>
                 @error('imagen_fondo') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
             </div>
 
             {{-- Logo --}}
-            <div class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-5">
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-3">
                 <div>
                     <flux:heading size="sm" class="text-zinc-700">Logo</flux:heading>
                     <flux:text size="sm" class="text-zinc-400 mt-1">Opcional. Deja vacío para mantener el actual.</flux:text>
                 </div>
 
-                @if($slide->logo_url)
-                    <div class="rounded-lg bg-zinc-100 p-3 flex items-center justify-center" x-show="!previews.logo">
-                        <img src="{{ $slide->logo_url }}" class="h-16 object-contain" alt="Logo actual">
-                    </div>
-                @endif
-
-                <div
-                    x-on:dragover.prevent="dragover = true"
-                    x-on:dragleave="dragover = false"
-                    x-on:drop.prevent="handleDrop($event, 'logo')"
-                    :class="dragover ? 'border-[#927F64] bg-[#927F64]/5' : 'border-zinc-300'"
-                    class="relative rounded-lg border-2 border-dashed transition-colors"
+                <input
+                    type="file"
+                    name="logo"
+                    accept="image/*"
+                    x-on:change="previewFile($event, 'logo')"
+                    class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 transition-colors cursor-pointer"
                 >
-                    <input
-                        type="file"
-                        name="logo"
-                        accept="image/*"
-                        class="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
-                        x-on:change="previewFile($event, 'logo')"
-                    >
-                    <div class="p-5 text-center" x-show="!previews.logo">
-                        <flux:icon name="arrow-up-tray" class="size-7 mx-auto mb-2 text-zinc-300" />
-                        <flux:text size="sm" class="text-zinc-500">Subir nuevo logo</flux:text>
-                    </div>
-                    <div x-show="previews.logo" class="p-2 flex justify-center">
-                        <img :src="previews.logo" class="h-20 object-contain rounded-md" />
-                    </div>
-                </div>
                 @error('logo') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
             </div>
 
             {{-- Video (solo tipo video) --}}
-            <div x-show="tipo === 'video'" class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-5">
+            <div x-show="tipo === 'video'" x-cloak class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-5">
                 <div>
                     <flux:heading size="sm" class="text-zinc-700">Video</flux:heading>
                     <flux:text size="sm" class="text-zinc-400 mt-1">Sube un archivo MP4 <strong>o</strong> ingresa un enlace de YouTube.</flux:text>
@@ -184,7 +144,8 @@
                         <flux:field>
                             <flux:label>Nuevo archivo MP4 <flux:badge size="sm" color="zinc">Máx. 100 MB</flux:badge></flux:label>
                             <input type="file" name="video" accept="video/mp4"
-                                class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 transition-colors">
+                                x-on:change="previewFile($event, 'video')"
+                                class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 transition-colors cursor-pointer">
                             <flux:error name="video" />
                         </flux:field>
                     </div>
@@ -200,41 +161,90 @@
             </div>
 
             {{-- Overlay (solo tipo capas) --}}
-            <div x-show="tipo === 'capas'" class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-5">
+            <div x-show="tipo === 'capas'" x-cloak class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-3">
                 <div>
                     <flux:heading size="sm" class="text-zinc-700">Imagen overlay</flux:heading>
                     <flux:text size="sm" class="text-zinc-400 mt-1">Se recortará a <strong>1080 × 1080 px</strong>. Deja vacío para mantener la actual.</flux:text>
                 </div>
 
-                @if($slide->imagen_overlay_url)
-                    <div class="rounded-lg bg-zinc-50 p-2 flex justify-center" x-show="!previews.overlay">
-                        <img src="{{ $slide->imagen_overlay_url }}" class="h-40 object-contain rounded-md" alt="Overlay actual">
-                    </div>
-                @endif
-
-                <div
-                    x-on:dragover.prevent="dragover = true"
-                    x-on:dragleave="dragover = false"
-                    x-on:drop.prevent="handleDrop($event, 'overlay')"
-                    :class="dragover ? 'border-[#927F64] bg-[#927F64]/5' : 'border-zinc-300'"
-                    class="relative rounded-lg border-2 border-dashed transition-colors"
+                <input
+                    type="file"
+                    name="imagen_overlay"
+                    accept="image/*"
+                    x-on:change="previewFile($event, 'overlay')"
+                    class="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 transition-colors cursor-pointer"
                 >
-                    <input
-                        type="file"
-                        name="imagen_overlay"
-                        accept="image/*"
-                        class="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
-                        x-on:change="previewFile($event, 'overlay')"
-                    >
-                    <div class="p-8 text-center" x-show="!previews.overlay">
-                        <flux:icon name="square-2-stack" class="size-10 mx-auto mb-2 text-zinc-300" />
-                        <flux:text size="sm" class="text-zinc-500">Subir nueva imagen overlay</flux:text>
-                    </div>
-                    <div x-show="previews.overlay" class="p-2 flex justify-center">
-                        <img :src="previews.overlay" class="h-48 object-contain rounded-md" />
-                    </div>
-                </div>
                 @error('imagen_overlay') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- ── Vista previa del hero ── --}}
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 flex flex-col gap-4">
+                <div>
+                    <flux:heading size="sm" class="text-zinc-700">Vista previa</flux:heading>
+                    <flux:text size="sm" class="text-zinc-400 mt-1">Así se verá el slide en el sitio. Usa los archivos nuevos si seleccionaste alguno.</flux:text>
+                </div>
+
+                <div class="relative w-full aspect-video rounded-lg overflow-hidden bg-zinc-900">
+
+                    {{-- Fondo --}}
+                    <template x-if="tipo !== 'video'">
+                        <template x-if="previews.fondo || {{ $slide->imagen_fondo_url ? 'true' : 'false' }}">
+                            <img :src="previews.fondo || '{{ $slide->imagen_fondo_url }}'" class="absolute inset-0 w-full h-full object-cover">
+                        </template>
+                    </template>
+
+                    <template x-if="tipo === 'video'">
+                        <template x-if="previews.video">
+                            <video :src="previews.video" class="absolute inset-0 w-full h-full object-cover" muted autoplay loop playsinline></video>
+                        </template>
+                    </template>
+                    <template x-if="tipo === 'video' && !previews.video">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <flux:icon name="film" class="size-8 text-zinc-600" />
+                        </div>
+                    </template>
+
+                    {{-- Overlay oscuro --}}
+                    <div class="absolute inset-0 bg-black/25 z-10"></div>
+
+                    {{-- Copy centrado --}}
+                    <div class="absolute inset-0 z-20 flex flex-col items-center justify-center text-center gap-2 px-4">
+                        <template x-if="previews.logo || {{ $slide->logo_url ? 'true' : 'false' }}">
+                            <img :src="previews.logo || '{{ $slide->logo_url }}'" class="w-[15%] max-w-[60px] opacity-90 select-none">
+                        </template>
+
+                        <p x-show="campos.caption" x-text="campos.caption"
+                           class="font-body text-white/90 text-[7px] tracking-widest uppercase font-light"
+                           style="text-shadow: 0 1px 2px rgba(0,0,0,0.3)"></p>
+
+                        <p x-show="campos.titulo" x-text="campos.titulo"
+                           class="font-serif font-light italic text-white leading-tight text-lg"
+                           style="text-shadow: 0 1px 2px rgba(0,0,0,0.3)"></p>
+
+                        <span x-show="campos.texto_boton"
+                              x-text="campos.texto_boton"
+                              class="inline-block bg-primary text-on-primary px-3 py-1.5 text-[6px] tracking-[0.2em] uppercase mt-1"></span>
+                    </div>
+
+                    {{-- Overlay de imagen (tipo capas) --}}
+                    <template x-if="tipo === 'capas'">
+                        <template x-if="previews.overlay || {{ $slide->imagen_overlay_url ? 'true' : 'false' }}">
+                            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 z-30 h-3/4 aspect-square pointer-events-none">
+                                <img :src="previews.overlay || '{{ $slide->imagen_overlay_url }}'" class="w-full h-full object-cover object-top">
+                            </div>
+                        </template>
+                    </template>
+
+                </div>
+
+                <p class="text-[11px] text-zinc-400">
+                    <span x-show="previews.fondo || previews.logo || previews.overlay || previews.video" class="inline-flex items-center gap-1 text-[#927F64] font-medium">
+                        <flux:icon name="check-circle" class="size-3.5" /> Mostrando archivo(s) nuevo(s)
+                    </span>
+                    <span x-show="!(previews.fondo || previews.logo || previews.overlay || previews.video)">
+                        Mostrando archivos actuales guardados.
+                    </span>
+                </p>
             </div>
 
         </div>
@@ -322,37 +332,8 @@
 
 </div>
 
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('slideForm', () => ({
-        tipo: '{{ old('tipo', $slide->tipo->value) }}',
-        dragover: false,
-        previews: { fondo: null, logo: null, overlay: null },
+<style>
+[x-cloak] { display: none !important; }
+</style>
 
-        previewFile(event, key) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => { this.previews[key] = e.target.result; };
-            reader.readAsDataURL(file);
-        },
-
-        handleDrop(event, key) {
-            this.dragover = false;
-            const file = event.dataTransfer.files[0];
-            if (!file) return;
-            const inputMap = { fondo: 'imagen_fondo', logo: 'logo', overlay: 'imagen_overlay' };
-            const input = document.querySelector(`input[name="${inputMap[key]}"]`);
-            if (input) {
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                input.files = dt.files;
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => { this.previews[key] = e.target.result; };
-            reader.readAsDataURL(file);
-        },
-    }));
-});
-</script>
 </x-layouts::app>

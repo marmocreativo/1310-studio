@@ -141,21 +141,19 @@
                     class="space-y-6"
                 >
                     {{-- Precio reactivo --}}
-                    @if($conf['activar_tienda'] ?? false)
-                        <div class="flex items-baseline gap-4">
-                            <span class="font-serif text-3xl text-on-surface"
-                                x-text="formatPrecio(precioActual)"></span>
-                            <template x-if="precioListaActual && precioListaActual > precioActual">
-                                <span class="text-lg text-outline line-through"
-                                    x-text="formatPrecio(precioListaActual)"></span>
-                            </template>
-                            <template x-if="precioListaActual && precioListaActual > precioActual">
-                                <span class="text-xs tracking-[0.1em] uppercase text-tertiary"
-                                    x-text="'-' + Math.round((1 - precioActual / precioListaActual) * 100) + '% descuento'">
-                                </span>
-                            </template>
-                        </div>
-                    @endif
+                    <div class="flex items-baseline gap-4">
+                        <span class="font-serif text-3xl text-on-surface"
+                            x-text="formatPrecio(precioActual)"></span>
+                        <template x-if="precioListaActual && precioListaActual > precioActual">
+                            <span class="text-lg text-outline line-through"
+                                x-text="formatPrecio(precioListaActual)"></span>
+                        </template>
+                        <template x-if="precioListaActual && precioListaActual > precioActual">
+                            <span class="text-xs tracking-[0.1em] uppercase text-tertiary"
+                                x-text="'-' + Math.round((1 - precioActual / precioListaActual) * 100) + '% descuento'">
+                            </span>
+                        </template>
+                    </div>
 
                     {{-- Descripción --}}
                     @if ($producto->descripcion)

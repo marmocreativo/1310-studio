@@ -1,13 +1,22 @@
 <x-layouts::public :title="__('Inicio')">
 
+@php
+    $primerSlide = $slides->first();
+    $overlayPrecarga = ($primerSlide && $primerSlide->tipo->value === 'capas')
+        ? $primerSlide->imagen_overlay_url
+        : null;
+@endphp
+
 {{-- ═══════════════════════════════════════════
     HERO — Slides dinámicos
 ════════════════════════════════════════════ --}}
 <section class="relative h-screen w-full overflow-hidden"
+        x-cloak
         x-data="{
             slide: 0,
             total: {{ $slides->count() }},
             timer: null,
+            listo: false,
             start() {
                 this.stop();
                 this.timer = setInterval(() => this.next(), 10000);
@@ -15,11 +24,38 @@
             stop() { clearInterval(this.timer); },
             next() { this.slide = (this.slide + 1) % this.total; },
             prev() { this.slide = (this.slide - 1 + this.total) % this.total; },
-            goTo(i) { this.slide = i; this.start(); }
+            goTo(i) { this.slide = i; this.start(); },
+            precargar(src) {
+                return new Promise((resolve) => {
+                    if (!src) { resolve(); return; }
+                    const img = new Image();
+                    img.onload  = resolve;
+                    img.onerror = resolve;
+                    img.src = src;
+                });
+            }
         }"
-        x-init="start()"
+        x-init="
+            await precargar('{{ $primerSlide?->imagen_fondo_url }}');
+            await precargar('{{ $overlayPrecarga }}');
+            listo = true;
+            start();
+        "
         @mouseenter="stop()"
         @mouseleave="start()">
+
+    {{-- Loader --}}
+    <div x-show="!listo"
+         x-transition:leave="transition-opacity duration-500"
+         x-transition:leave-end="opacity-0"
+         class="absolute inset-0 z-50 flex items-center justify-center bg-surface">
+        <div class="w-8 h-8 border-2 border-on-surface/20 border-t-on-surface rounded-full animate-spin"></div>
+    </div>
+
+    <div x-show="listo"
+         x-transition:enter="transition-opacity duration-700"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100">
 
     @foreach($slides as $index => $slide)
 
@@ -62,7 +98,7 @@
                 @if($slide->logo_url)
                     <img src="{{ $slide->logo_url }}"
                         alt="{{ $slide->titulo }}"
-                        class="w-[15%] max-w-xs opacity-90 select-none pointer-events-none">
+                        class="w-[20%] md:w-[15%] md:max-w-xs opacity-90 select-none pointer-events-none">
                 @endif
 
                 @if($slide->caption)
@@ -73,8 +109,8 @@
                 @endif
 
                 @if($slide->titulo)
-                    <h1 class="font-serif font-light italic text-white drop-shadow-md"
-                        style="font-size: 4.55rem; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
+                    <h1 class="font-serif font-light italic text-white drop-shadow-md text-2xl md:text-[4.55rem]"
+                        style="line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.3)">
                         {{ $slide->titulo }}
                     </h1>
                 @endif
@@ -92,7 +128,7 @@
 
             {{-- ── Overlay de imagen (solo tipo capas) ── --}}
             @if($slide->tipo->value === 'capas' && $slide->imagen_overlay_url)
-                <div class="hero-overlay-img absolute bottom-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+                <div class="hero-overlay-img absolute bottom-0 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
                     <img src="{{ $slide->imagen_overlay_url }}"
                         alt=""
                         class="w-full h-full object-cover object-top select-none"
@@ -127,6 +163,8 @@
             </template>
         </div>
     @endif
+
+    </div>{{-- fin listo --}}
 
 </section>
 
@@ -407,6 +445,8 @@
 
 {{-- CSS animación carrusel --}}
 <style>
+    [x-cloak] { display: none !important; }
+
     @keyframes scroll-carousel {
         0%   { transform: translateX(0); }
         100% { transform: translateX(calc(-300px * 6 - 3rem * 6)); }

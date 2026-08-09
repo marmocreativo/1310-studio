@@ -1,4 +1,22 @@
 document.addEventListener('alpine:init', () => {
+    Alpine.data('slideForm', ({ tipo, titulo, caption, textoBoton }) => ({
+        tipo,
+        previews: { fondo: null, logo: null, overlay: null, video: null },
+        campos: {
+            titulo:      titulo,
+            caption:     caption,
+            texto_boton: textoBoton,
+        },
+
+        previewFile(event, key) {
+            const file = event.target.files[0];
+            if (!file) { this.previews[key] = null; return; }
+            const reader = new FileReader();
+            reader.onload = (e) => { this.previews[key] = e.target.result; };
+            reader.readAsDataURL(file);
+        },
+    }));
+    
     Alpine.data('galeriaUploader', ({ uploadUrl, reorderUrl, csrfToken, inicial }) => ({
         imagenes: inicial,
         drag:     false,

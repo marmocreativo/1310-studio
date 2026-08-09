@@ -47,10 +47,11 @@
                     ['label' => 'Inicio',           'route' => 'home'],
                     ['label' => 'Categorías',       'route' => 'categorias.index'],
                     ['label' => 'Directorio Floral','route' => 'directorio-floral.index'],
-                    ['label' => 'Talleres',         'route' => 'talleres.index'],
-                    ['label' => 'Eventos',          'route' => 'eventos'],
+                    ['label' => 'Talleres',         'route' => 'talleres.index', 'visible' => $conf['activar_talleres'] ?? true],
+                    ['label' => 'Eventos',          'route' => 'eventos',        'visible' => $conf['activar_eventos'] ?? true],
                     ['label' => 'Visítanos',        'route' => 'visitanos'],
                 ] as $item)
+                    @continue(! ($item['visible'] ?? true))
                     <a href="{{ route($item['route']) }}" wire:navigate
                        onclick="closeAll()"
                        class="py-4 border-b border-outline-variant text-xs tracking-[0.15em] uppercase
@@ -245,10 +246,12 @@
                            class="text-xs tracking-[0.1em] font-light uppercase text-on-surface-variant hover:text-on-surface transition-colors duration-300">
                             Directorio Floral
                         </a>
-                        <a href="{{ route('talleres.index') }}" wire:navigate
-                           class="text-xs tracking-[0.1em] font-light uppercase text-on-surface-variant hover:text-on-surface transition-colors duration-300">
-                            Talleres
-                        </a>
+                        @if($conf['activar_talleres'] ?? true)
+                            <a href="{{ route('talleres.index') }}" wire:navigate
+                               class="text-xs tracking-[0.1em] font-light uppercase text-on-surface-variant hover:text-on-surface transition-colors duration-300">
+                                Talleres
+                            </a>
+                        @endif
                     </div>
                 </div>
 
@@ -263,10 +266,12 @@
                 <div class="flex-1 flex justify-end items-center gap-5">
 
                     <div class="hidden md:flex items-center gap-8">
-                        <a href="{{ route('eventos') }}" wire:navigate
-                           class="text-xs tracking-[0.1em] font-light uppercase text-on-surface-variant hover:text-on-surface transition-colors duration-300">
-                            Eventos
-                        </a>
+                        @if($conf['activar_eventos'] ?? true)
+                            <a href="{{ route('eventos') }}" wire:navigate
+                               class="text-xs tracking-[0.1em] font-light uppercase text-on-surface-variant hover:text-on-surface transition-colors duration-300">
+                                Eventos
+                            </a>
+                        @endif
                         <a href="{{ route('visitanos') }}" wire:navigate
                            class="text-xs tracking-[0.1em] font-light uppercase text-on-surface-variant hover:text-on-surface transition-colors duration-300">
                             Visítanos
@@ -406,10 +411,11 @@
                                 ['label' => 'Inicio',           'route' => 'home'],
                                 ['label' => 'Categorías',       'route' => 'categorias.index'],
                                 ['label' => 'Directorio Floral','route' => 'directorio-floral.index'],
-                                ['label' => 'Talleres',         'route' => 'talleres.index'],
-                                ['label' => 'Eventos',          'route' => 'eventos'],
+                                ['label' => 'Talleres',         'route' => 'talleres.index', 'visible' => $conf['activar_talleres'] ?? true],
+                                ['label' => 'Eventos',          'route' => 'eventos',        'visible' => $conf['activar_eventos'] ?? true],
                                 ['label' => 'Visítanos',        'route' => 'visitanos'],
                             ] as $item)
+                                @continue(! ($item['visible'] ?? true))
                                 <li>
                                     <a href="{{ route($item['route']) }}" wire:navigate
                                        class="text-[10px] tracking-[0.2em] uppercase font-light text-outline hover:text-on-surface transition-colors duration-300">
