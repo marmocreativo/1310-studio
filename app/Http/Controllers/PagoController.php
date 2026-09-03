@@ -159,23 +159,39 @@ class PagoController extends Controller
 
         $client = new PreferenceClient();
 
-        $preference = $client->create([
-            'items'               => $items,
-            'external_reference'  => $pedido->numero,
-            'back_urls'           => [
-                'success' => route('pagos.exito'),
-                'failure' => route('pagos.fallo'),
-                'pending' => route('pagos.pendiente'),
-            ],
-            'auto_return'         => 'approved',
-            'notification_url'    => route('pagos.webhook'),
-            'payment_methods'     => [
-                'excluded_payment_types' => $excluirMetodos,
-            ],
-            'statement_descriptor'=> '1310 Studio',
-            'expires'             => true,
-            'expiration_date_to'  => now()->addHours(24)->toIso8601String(),
-        ]);
+        try {
+            $preference = $client->create([
+                'items'               => $items,
+                'external_reference'  => $pedido->numero,
+                'back_urls'           => [
+                    'success' => route('pagos.exito'),
+                    'failure' => route('pagos.fallo'),
+                    'pending' => route('pagos.pendiente'),
+                ],
+                'auto_return'         => 'approved',
+                'notification_url'    => route('pagos.webhook'),
+                'payment_methods'     => [
+                    'excluded_payment_types' => $excluirMetodos,
+                ],
+                'statement_descriptor'=> '1310 Studio',
+                'expires'             => true,
+                'expiration_date_to'  => now()->addHours(24)->toIso8601String(),
+            ]);
+        } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            Log::error('Error creando preferencia MP', [
+                'error' => $e->getApiResponse()?->getContent() ?? $e->getMessage(),
+            ]);
+            return response()->json([
+                'ok'      => false,
+                'message' => 'No se pudo iniciar el pago.',
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error inesperado creando preferencia MP', ['error' => $e->getMessage()]);
+            return response()->json([
+                'ok'      => false,
+                'message' => 'No se pudo iniciar el pago.',
+            ], 500);
+        }
 
         // Guardar preference_id
         Pago::create([
@@ -186,13 +202,110 @@ class PagoController extends Controller
             'estado'           => 'pendiente',
         ]);
 
-        // Devolver preference_id al frontend para Bricks
         return response()->json([
-            'ok'            => true,
-            'preference_id' => $preference->id,
-            'pedido_numero' => $pedido->numero,
-            'total'         => $pedido->total,
+            'ok'         => true,
+            'init_point' => $preference->init_point,
         ]);
+    }
+
+        // ─── Procesar pago del Payment Brick ──────────
+
+        public function procesarPagoBrick(Request $request)
+    {
+        $numero = session('pedido_numero');
+        $pedido = Pedido::where('numero', $numero)->firstOrFail();
+
+        Log::info('formData recibido del Brick', $request->all());
+
+        $payer = ['email' => $request->input('payer.email')];
+
+        if ($request->filled('payer.identification.type') && $request->filled('payer.identification.number')) {
+            $payer['identification'] = [
+                'type'   => $request->input('payer.identification.type'),
+                'number' => $request->input('payer.identification.number'),
+            ];
+        }
+
+        $payload = [
+            'transaction_amount' => (float) $request->input('transaction_amount'),
+            'token'               => $request->input('token'),
+            'description'         => 'Pedido ' . $pedido->numero,
+            'installments'        => (int) $request->input('installments', 1),
+            'payment_method_id'   => $request->input('payment_method_id'),
+            'payer'               => $payer,
+            'external_reference'  => $pedido->numero,
+            'notification_url'    => route('pagos.webhook'),
+        ];
+
+        // Si es ticket (OXXO/Paycash), el Brick manda otra forma
+        if ($request->filled('payment_method_id') && !$request->filled('token')) {
+            $payerTicket = [
+                'email'      => $request->input('payer.email'),
+                'first_name' => $request->input('payer.first_name'),
+                'last_name'  => $request->input('payer.last_name'),
+            ];
+
+            if ($request->filled('payer.identification.type') && $request->filled('payer.identification.number')) {
+                $payerTicket['identification'] = [
+                    'type'   => $request->input('payer.identification.type'),
+                    'number' => $request->input('payer.identification.number'),
+                ];
+            }
+
+            $payload = [
+                'transaction_amount'  => (float) $request->input('transaction_amount'),
+                'payment_method_id'   => $request->input('payment_method_id'),
+                'description'         => 'Pedido ' . $pedido->numero,
+                'payer'               => $payerTicket,
+                'external_reference'  => $pedido->numero,
+                'notification_url'    => route('pagos.webhook'),
+            ];
+        }
+
+        try {
+            $client  = new PaymentClient();
+            $payment = $client->create($payload);
+
+            $estadoPago = match($payment->status) {
+                'approved' => 'aprobado',
+                'rejected' => 'rechazado',
+                default    => 'pendiente',
+            };
+
+            $datosPago = [
+                'metodo'        => $formData['payment_method_id'] ?? session('metodo_pago'),
+                'mp_payment_id' => $payment->id,
+                'mp_status'     => $payment->status,
+                'estado'        => $estadoPago,
+                'datos_mp'      => (array) $payment,
+            ];
+
+            $pago = $pedido->pagos()->latest()->first();
+            $pago
+                ? $pago->update($datosPago)
+                : Pago::create(array_merge(['id_pedido' => $pedido->id, 'monto' => $pedido->total], $datosPago));
+
+            if ($estadoPago === 'aprobado') {
+                $pedido->update(['estado' => 'pagado']);
+                $pedido->carrito?->items()->delete();
+                session()->forget(['pedido_numero', 'metodo_pago']);
+            }
+
+            return response()->json([
+                'ok'            => true,
+                'id'            => $payment->id,
+                'status'        => $payment->status,
+                'status_detail' => $payment->status_detail,
+                'redirect'      => $estadoPago === 'aprobado' ? route('checkout.confirmacion', $pedido->numero) : null,
+            ]);
+
+        } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            Log::error('Error MP procesarPagoBrick', ['error' => $e->getApiResponse()?->getContent() ?? $e->getMessage()]);
+            return response()->json(['ok' => false, 'message' => 'No se pudo procesar el pago. Verifica los datos.'], 422);
+        } catch (\Exception $e) {
+            Log::error('Error procesarPagoBrick', ['error' => $e->getMessage()]);
+            return response()->json(['ok' => false, 'message' => 'Error al procesar el pago.'], 500);
+        }
     }
 
     // ─── Resultado exitoso ────────────────────────

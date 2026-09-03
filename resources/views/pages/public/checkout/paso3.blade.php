@@ -45,15 +45,16 @@
                                 $esContraEntrega = $valor === 'contra_entrega';
                                 $contraEntregaDesactivada = $esContraEntrega && $paso2['tipo_entrega'] !== 'tienda';
                             @endphp
+                            @php
+                                $clickAttr = $contraEntregaDesactivada ? '' : "x-on:click=\"metodo = '{$valor}'\"";
+                            @endphp
                             <label
                                 :class="{
                                     'border-on-surface bg-surface-container-low': metodo === '{{ $valor }}',
                                     'border-outline-variant hover:border-outline cursor-pointer': metodo !== '{{ $valor }}' && !{{ $contraEntregaDesactivada ? 'true' : 'false' }},
                                     'opacity-40 cursor-not-allowed': {{ $contraEntregaDesactivada ? 'true' : 'false' }}
                                 }"
-                                @if(!$contraEntregaDesactivada)
-                                    @click="metodo = '{{ $valor }}'"
-                                @endif
+                                {!! $clickAttr !!}
                                 class="flex items-center gap-4 border p-5 transition-colors">
                                 <input type="radio" name="metodo_pago" value="{{ $valor }}"
                                     x-model="metodo"

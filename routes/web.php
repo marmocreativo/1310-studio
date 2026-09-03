@@ -195,6 +195,7 @@ Route::prefix('admin')
 
     // Mercado Pago
     Route::prefix('pagos')->name('pagos.')->group(function () {
+        Route::post('/procesar-pago', [PagoController::class, 'procesarPagoBrick'])->name('procesar-pago');
         Route::post('/procesar-tarjeta', [PagoController::class, 'procesarTarjeta'])->name('procesar-tarjeta');
         Route::get('/pagar/{numero}', [PagoController::class, 'pagar'])->name('pagar');
         Route::post('/crear-preferencia', [PagoController::class, 'crearPreferencia'])->name('preferencia');

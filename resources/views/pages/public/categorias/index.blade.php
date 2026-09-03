@@ -34,7 +34,7 @@
                                     {{ $categoria->titulo }}
                                 </h2>
                                 @if($categoria->resumen)
-                                    <p class="text-white/70 text-xs tracking-wide mt-2 font-light max-w-xs">
+                                    <p class="hidden sm:block text-white/70 text-xs tracking-wide mt-2 font-light max-w-xs">
                                         {{ $categoria->resumen }}
                                     </p>
                                 @endif

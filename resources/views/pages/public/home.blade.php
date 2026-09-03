@@ -98,7 +98,7 @@
                 @if($slide->logo_url)
                     <img src="{{ $slide->logo_url }}"
                         alt="{{ $slide->titulo }}"
-                        class="w-[20%] md:w-[15%] md:max-w-xs opacity-90 select-none pointer-events-none">
+                        class="w-[40%] md:w-[15%] md:max-w-xs opacity-90 select-none pointer-events-none">
                 @endif
 
                 @if($slide->caption)
@@ -177,8 +177,8 @@
 
             {{-- Imagen --}}
             <div class="w-full md:w-1/2 relative">
-                <div class="aspect-[3/4] bg-stone-100 overflow-hidden">
-                    <img src="{{ asset('images/arreglo_floral.jpg') }}"
+                <div class="aspect-square bg-stone-100 overflow-hidden">
+                    <img src="{{ asset('images/arreglo_floral_2.jpg') }}"
                          alt="Arreglo floral editorial"
                          class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000">
                 </div>
@@ -187,13 +187,8 @@
             {{-- Copy --}}
             <div class="w-full md:w-1/2 space-y-10">
                 <h2 class="font-serif text-5xl text-on-surface leading-tight">
-                    La sutileza de lo efímero.
+                    Flores de verdad
                 </h2>
-                <p class="text-on-surface-variant leading-relaxed max-w-md font-light">
-                    Nuestras piezas no son solo ramos; son esculturas temporales diseñadas
-                    para habitar espacios con intención. Cada flor es seleccionada por su
-                    arquitectura y longevidad.
-                </p>
                 <div class="pt-4">
                     <a href="{{ route('categorias.index') }}" wire:navigate
                        class="text-on-surface border-b border-outline pb-1 text-xs tracking-widest uppercase hover:border-on-surface transition-all duration-300">
@@ -352,7 +347,7 @@
                 </p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($categorias as $categoria)
                     <a href="{{ route('categorias.show', $categoria->slug) }}" wire:navigate
                     class="relative overflow-hidden bg-stone-100 group block" style="aspect-ratio: 4/3;">
@@ -373,7 +368,7 @@
                                     {{ $categoria->titulo }}
                                 </h3>
                                 @if($categoria->resumen)
-                                    <p class="text-white/70 text-xs tracking-wide mt-2 font-light max-w-xs">
+                                    <p class="hidden sm:block text-white/70 text-xs tracking-wide mt-2 font-light max-w-xs">
                                         {{ $categoria->resumen }}
                                     </p>
                                 @endif
@@ -409,7 +404,7 @@
                     <a href="https://wa.me/{{ $conf['whatsapp_contacto'] ?? '' }}?text={{ urlencode('Hola, me gustaría recibir asesoría personalizada para un arreglo.') }}"
                         target="_blank"
                         class="inline-block bg-on-surface text-surface px-10 py-4 text-xs tracking-[0.2em] uppercase hover:opacity-80 transition-colors duration-300">
-                            Escribirnos por WhatsApp
+                            Escríbenos por WhatsApp
                     </a>
                 </div>
 

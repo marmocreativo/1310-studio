@@ -395,7 +395,10 @@ class CheckoutController extends Controller
                 return redirect()->route('checkout.confirmacion', $pedido->numero);
             }
 
-            session(['metodo_pago' => $request->metodo_pago]);
+            session([
+                'metodo_pago'   => $request->metodo_pago,
+                'pedido_numero' => $pedido->numero,
+            ]);
             return redirect()->route('pagos.pagar', $pedido->numero);
 
         } catch (\Exception $e) {
