@@ -191,10 +191,10 @@
         <div class="absolute inset-0 bg-black/55 flex flex-col items-center justify-center text-center px-8 gap-6">
             <p class="text-[11px] tracking-[0.3em] uppercase text-white/60">¿Tienes un evento en mente?</p>
             <h2 class="font-serif text-4xl md:text-5xl text-white font-light">Hablemos de tu proyecto</h2>
-            <a href="https://wa.me/5212345678?text={{ urlencode('Hola, me interesa el servicio de flores para eventos.') }}"
+            <a href="https://wa.me/{{ $conf['whatsapp_eventos'] ?? '' }}?text={{ urlencode('Hola, me interesa el servicio de flores para eventos.') }}"
                target="_blank"
                class="inline-block bg-white text-on-surface px-12 py-4 text-xs tracking-[0.3em] uppercase hover:bg-primary hover:text-on-primary transition-all duration-500 mt-2">
-                Contactar por WhatsApp
+                Contactar por WhatsApp {{ $conf['whatsapp_eventos'] ?? '' }}
             </a>
         </div>
     </section>

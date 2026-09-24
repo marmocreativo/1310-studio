@@ -4,7 +4,6 @@
     use App\Models\Categoria;
     use App\Models\Producto;
     use Illuminate\Support\Str;
-    use Illuminate\Support\Facades\DB;
 
     class CategoriasController extends Controller
     {
@@ -23,15 +22,13 @@
         {
             $categoria->load('hijos');
 
-            $productos = Producto::activos()
-                ->whereIn('id',
-                    DB::table('productos_categorias')
-                        ->where('id_categoria', $categoria->id)
-                        ->pluck('id_producto')
-                )
+            $productos = $categoria->productos()
+                ->where('estado', true)
                 ->with('galeria')
+                ->orderByRaw('productos_categorias.orden IS NULL, productos_categorias.orden ASC')
+                ->orderBy('nombre')
                 ->paginate(12);
-            
+
             return view('pages.public.categorias.show', compact('categoria', 'productos'));
         }
     }

@@ -442,6 +442,57 @@ document.addEventListener('alpine:init', () => {
             });
         },
     }));
+
+    Alpine.data('categoriaProductosDnD', (urlOrden, csrfToken) => ({
+        mensaje: '',
+        dragging: null,
+
+        dragStart(tr) {
+            this.dragging = tr;
+        },
+
+        dragOver(e, tr) {
+            e.preventDefault();
+            if (!this.dragging || this.dragging === tr) return;
+            const tbody = tr.parentNode;
+            const rows  = Array.from(tbody.children);
+            const from  = rows.indexOf(this.dragging);
+            const to    = rows.indexOf(tr);
+            if (from < to) {
+                tbody.insertBefore(this.dragging, tr.nextSibling);
+            } else {
+                tbody.insertBefore(this.dragging, tr);
+            }
+        },
+
+        async dragEnd(tbody) {
+            this.dragging = null;
+            const orden = Array.from(tbody.children)
+                .map(tr => tr.dataset.id)
+                .filter(Boolean)
+                .map(id => parseInt(id));
+
+            if (!orden.length) return;
+
+            try {
+                const res = await fetch(urlOrden, {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({ orden }),
+                });
+                if (res.ok) {
+                    this.mensaje = 'Orden guardado.';
+                    setTimeout(() => { this.mensaje = ''; }, 2000);
+                }
+            } catch (e) {
+                this.mensaje = '';
+            }
+        },
+    }));
 });
 
 /**

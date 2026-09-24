@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use App\Models\Producto;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -64,10 +65,28 @@ class AdminCategoriasController extends Controller
         $productos = $categoria->productos()
             ->with('galeria')
             ->withCount('categorias')
+            ->orderByRaw('productos_categorias.orden IS NULL, productos_categorias.orden ASC')
             ->orderBy('nombre')
-            ->paginate(15);
+            ->get();
 
         return view('pages.admin.categorias.show', compact('categoria', 'productos'));
+    }
+
+        public function productosOrden(Request $request, Categoria $categoria)
+    {
+        $data = $request->validate([
+            'orden'   => 'required|array',
+            'orden.*' => 'integer|exists:productos,id',
+        ]);
+
+        foreach ($data['orden'] as $index => $idProducto) {
+            DB::table('productos_categorias')
+                ->where('id_categoria', $categoria->id)
+                ->where('id_producto', $idProducto)
+                ->update(['orden' => $index]);
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function edit(Categoria $categoria)

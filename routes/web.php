@@ -38,6 +38,8 @@ Route::prefix('admin')
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('paginas', AdminPaginasController::class);
         Route::resource('categorias', AdminCategoriasController::class);
+        Route::resource('categorias', AdminCategoriasController::class);
+        Route::patch('categorias/{categoria}/productos/orden', [AdminCategoriasController::class, 'productosOrden'])->name('categorias.productos.orden');
 
         // Slides Hero
         Route::post('slides/orden', [AdminSlidesController::class, 'orden'])->name('slides.orden');

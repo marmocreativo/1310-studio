@@ -22,7 +22,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
                 <flux:text class="text-xs text-zinc-500 uppercase tracking-wide">Productos</flux:text>
-                <p class="mt-1 text-2xl font-semibold text-zinc-900 dark:text-white">{{ $productos->total() }}</p>
+                <p class="mt-1 text-2xl font-semibold text-zinc-900 dark:text-white">{{ $productos->count() }}</p>
             </div>
             <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
                 <flux:text class="text-xs text-zinc-500 uppercase tracking-wide">Estado</flux:text>
@@ -54,13 +54,19 @@
         <div>
             <div class="flex items-center justify-between mb-3">
                 <flux:heading size="lg">Productos en esta categoría</flux:heading>
-                <flux:text class="text-sm text-zinc-400">{{ $productos->total() }} {{ Str::plural('producto', $productos->total()) }}</flux:text>
+                <flux:text class="text-sm text-zinc-400">{{ $productos->count() }} {{ Str::plural('producto', $productos->count()) }}</flux:text>
             </div>
 
-            <div class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+            <div
+                x-data="categoriaProductosDnD(@js(route('admin.categorias.productos.orden', $categoria)), @js(csrf_token()))"
+                class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+            >
+                <div x-show="mensaje" x-text="mensaje" x-transition class="px-4 py-2 text-xs text-green-600 bg-green-50 dark:bg-green-900/20"></div>
+
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-left">
+                            <th class="px-4 py-3 w-8"></th>
                             <th class="px-4 py-3 w-14"></th>
                             <th class="px-4 py-3 font-medium text-zinc-500 dark:text-zinc-400">Nombre</th>
                             <th class="px-4 py-3 font-medium text-zinc-500 dark:text-zinc-400">Precio venta</th>
@@ -69,9 +75,20 @@
                             <th class="px-4 py-3 font-medium text-zinc-500 dark:text-zinc-400 text-right">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    <tbody x-ref="tbody" class="divide-y divide-zinc-100 dark:divide-zinc-800">
                         @forelse($productos as $producto)
-                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                            <tr
+                                draggable="true"
+                                data-id="{{ $producto->id }}"
+                                x-on:dragstart="dragStart($event.currentTarget)"
+                                x-on:dragover="dragOver($event, $event.currentTarget)"
+                                x-on:dragend="dragEnd($refs.tbody)"
+                                class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-move"
+                            >
+                                {{-- Handle --}}
+                                <td class="px-4 py-3 text-zinc-300 dark:text-zinc-600">
+                                    <flux:icon name="bars-3" class="size-4" />
+                                </td>
 
                                 {{-- Imagen --}}
                                 <td class="px-4 py-3">
@@ -125,37 +142,21 @@
                                             href="{{ route('admin.productos.edit', $producto) }}"
                                             variant="ghost"
                                             size="sm"
-                                            icon="pencil-square"
-                                            title="Editar"
-                                            wire:navigate
-                                        />
-                                        <flux:button
-                                            href="{{ route('productos.show', $producto) }}"
-                                            variant="ghost"
-                                            size="sm"
-                                            icon="arrow-top-right-on-square"
-                                            title="Ver en sitio"
-                                            target="_blank"
+                                            icon="pencil"
                                         />
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-16 text-center">
-                                    <flux:icon name="shopping-bag" class="size-10 mx-auto mb-3 text-zinc-300" />
-                                    <flux:text class="text-zinc-400">Esta categoría no tiene productos asignados.</flux:text>
+                                <td colspan="7" class="px-4 py-10 text-center text-zinc-400">
+                                    No hay productos en esta categoría aún.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-
-            {{-- Paginación --}}
-            @if($productos->hasPages())
-                <div class="mt-4">{{ $productos->links() }}</div>
-            @endif
         </div>
 
     </div>
