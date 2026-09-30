@@ -13,8 +13,15 @@
     {{-- Productos --}}
     <span class="label">Productos</span>
     @foreach($pedido->items as $item)
-        <div class="item-row">
-            <div>
+        <div class="item-row" style="display:flex; align-items:flex-start; gap:12px;">
+            <div style="width:56px; height:56px; flex-shrink:0; overflow:hidden; border-radius:4px; background:#f0ede8;">
+                @if($item->imagen_url)
+                    <img src="{{ $item->imagen_url }}" alt="{{ $item->nombre_snapshot }}"
+                         width="56" height="56"
+                         style="width:56px; height:56px; object-fit:cover; display:block;">
+                @endif
+            </div>
+            <div style="flex:1;">
                 <span class="item-name">{{ $item->nombre_snapshot }}</span>
                 @if($item->opciones_snapshot)
                     <br>
@@ -23,7 +30,7 @@
                     @endforeach
                 @endif
             </div>
-            <div style="text-align:right;">
+            <div style="text-align:right; flex-shrink:0;">
                 <span class="item-qty">× {{ $item->cantidad }}</span><br>
                 <span class="item-price">${{ number_format($item->subtotal, 2) }}</span>
             </div>
@@ -75,14 +82,53 @@
 
     @if($pedido->tipo_entrega === 'envio')
     <div style="margin-top: 8px;">
-        <span class="label">Dirección</span>
+        <span class="label">Dirección de entrega</span>
         <span class="value">
             {{ $pedido->calle }} {{ $pedido->numero_ext }}
             @if($pedido->numero_int) Int. {{ $pedido->numero_int }} @endif,
             {{ $pedido->colonia }}, CP {{ $pedido->cp }}
         </span>
+        @if($pedido->referencias)
+            <br><span style="font-size:11px;color:#8a8a8a;">Referencias: {{ $pedido->referencias }}</span>
+        @endif
     </div>
     @endif
+
+    @if($pedido->destinatario_nombre)
+    <div style="margin-top: 8px;">
+        <span class="label">Destinatario</span>
+        <span class="value">
+            {{ $pedido->destinatario_nombre }}
+            @if($pedido->destinatario_telefono) · {{ $pedido->destinatario_telefono }} @endif
+        </span>
+        @if($pedido->mensaje_tarjeta)
+            <br><span style="font-size:11px;color:#8a8a8a;font-style:italic;">"{{ $pedido->mensaje_tarjeta }}"</span>
+        @endif
+    </div>
+    @endif
+
+    <hr class="divider">
+
+    {{-- Método de pago --}}
+    <span class="label">Método de pago</span>
+    <div class="grid" style="margin-top: 8px;">
+        <div class="grid-item">
+            <span class="label">Forma de pago</span>
+            <span class="value">{{ $pedido->pago?->metodo_label ?? '—' }}</span>
+        </div>
+        <div class="grid-item">
+            <span class="label">Estado</span>
+            <span class="value">
+                @if($pedido->estado === 'pagado')
+                    Pago confirmado
+                @elseif($pedido->pago?->metodo === 'transferencia')
+                    Pendiente de transferencia
+                @else
+                    {{ $pedido->estado_label }}
+                @endif
+            </span>
+        </div>
+    </div>
 
     @if($pedido->pago?->metodo === 'transferencia')
     <hr class="divider">

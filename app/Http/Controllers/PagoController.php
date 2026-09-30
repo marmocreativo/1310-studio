@@ -8,7 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\Client\Order\OrderClient;
+use MercadoPago\Client\Common\RequestOptions;
 use MercadoPago\MercadoPagoConfig;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class PagoController extends Controller
 {
@@ -35,79 +40,66 @@ class PagoController extends Controller
     public function procesarTarjeta(Request $request)
     {
         $request->validate([
-            'pedido_numero' => 'required|string',
-            'token'         => 'required|string',
-            'issuer_id'     => 'nullable|string',
-            'payment_method_id' => 'required|string',
-            'transaction_amount' => 'required|numeric',
-            'installments'  => 'required|integer',
-            'payer'         => 'required|array',
+            'pedido_numero'       => 'required|string',
+            'token'               => 'required|string',
+            'issuer_id'           => 'nullable|string',
+            'payment_method_id'   => 'required|string',
+            'transaction_amount'  => 'required|numeric',
+            'installments'        => 'required|integer',
+            'payer'               => 'required|array',
         ]);
 
-        $pedido = Pedido::where('numero', $request->pedido_numero)
-            ->with('items')
-            ->firstOrFail();
+        $pedido = Pedido::where('numero', $request->pedido_numero)->with('items')->firstOrFail();
+
+        $paymentMethod = [
+            'id'           => $request->payment_method_id,
+            'type'         => $this->resolverTipoPaymentMethod($request->payment_method_id),
+            'token'        => $request->token,
+            'installments' => (int) $request->installments,
+        ];
+
+        if ($request->filled('issuer_id')) {
+            $paymentMethod['issuer_id'] = $request->issuer_id;
+        }
+
+        $monto = (float) $request->transaction_amount;
 
         try {
-            $client = new \MercadoPago\Client\Payment\PaymentClient();
+            $client = new OrderClient();
 
-            $payment = $client->create([
-                'transaction_amount' => (float) $request->transaction_amount,
-                'token'              => $request->token,
-                'description'        => 'Pedido ' . $pedido->numero,
-                'installments'       => (int) $request->installments,
-                'payment_method_id'  => $request->payment_method_id,
-                'issuer_id'          => $request->issuer_id,
-                'payer'              => [
+            $requestOptions = new RequestOptions();
+            $requestOptions->setCustomHeaders(['X-Idempotency-Key: ' . (string) Str::uuid()]);
+
+            $order = $client->create([
+                'type'               => 'online',
+                'processing_mode'    => 'automatic',
+                'total_amount'       => number_format($monto, 2, '.', ''),
+                'external_reference' => $pedido->numero,
+                'notification_url'   => route('pagos.webhook'),
+                'payer' => [
                     'email'          => $request->payer['email'],
                     'identification' => $request->payer['identification'] ?? null,
                 ],
-                'external_reference' => $pedido->numero,
-                'notification_url'   => route('pagos.webhook'),
-            ]);
+                'transactions' => [
+                    'payments' => [
+                        [
+                            'amount'         => number_format($monto, 2, '.', ''),
+                            'payment_method' => $paymentMethod,
+                        ],
+                    ],
+                ],
+            ], $requestOptions);
 
-            $estadoPago = match($payment->status) {
-                'approved' => 'aprobado',
-                'rejected' => 'rechazado',
-                default    => 'pendiente',
-            };
-
-            // Actualizar o crear pago
-            $pago = $pedido->pagos()->latest()->first();
-            if ($pago) {
-                $pago->update([
-                    'mp_payment_id' => $payment->id,
-                    'mp_status'     => $payment->status,
-                    'estado'        => $estadoPago,
-                    'datos_mp'      => (array) $payment,
-                ]);
-            } else {
-                \App\Models\Pago::create([
-                    'id_pedido'     => $pedido->id,
-                    'metodo'        => 'tarjeta',
-                    'mp_payment_id' => $payment->id,
-                    'mp_status'     => $payment->status,
-                    'monto'         => $pedido->total,
-                    'estado'        => $estadoPago,
-                    'datos_mp'      => (array) $payment,
-                ]);
-            }
-
-            if ($estadoPago === 'aprobado') {
-                $pedido->update(['estado' => 'pagado']);
-                if ($pedido->carrito) {
-                    $pedido->carrito->items()->delete();
-                }
-            }
+            $datosPago = $this->guardarPagoDesdeOrder($pedido, $order);
 
             return response()->json([
                 'ok'       => true,
-                'estado'   => $estadoPago,
+                'estado'   => $datosPago['estado'],
                 'redirect' => route('checkout.confirmacion', $pedido->numero),
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error al procesar tarjeta', ['error' => $e->getMessage()]);
+            Log::error('Error al procesar tarjeta', ['error' => $e->getMessage()]);
             return response()->json([
                 'ok'      => false,
                 'message' => 'Error al procesar el pago. Intenta de nuevo.',
@@ -213,7 +205,7 @@ class PagoController extends Controller
         public function procesarPagoBrick(Request $request)
     {
         $numero = session('pedido_numero');
-        $pedido = Pedido::where('numero', $numero)->firstOrFail();
+        $pedido = Pedido::where('numero', $numero)->with('items')->firstOrFail();
 
         Log::info('formData recibido del Brick', $request->all());
 
@@ -226,77 +218,83 @@ class PagoController extends Controller
             ];
         }
 
-        $payload = [
-            'transaction_amount' => (float) $request->input('transaction_amount'),
-            'token'               => $request->input('token'),
-            'description'         => 'Pedido ' . $pedido->numero,
-            'installments'        => (int) $request->input('installments', 1),
-            'payment_method_id'   => $request->input('payment_method_id'),
-            'payer'               => $payer,
-            'external_reference'  => $pedido->numero,
-            'notification_url'    => route('pagos.webhook'),
+        $esTicket = $request->filled('payment_method_id') && !$request->filled('token');
+
+        if ($esTicket) {
+            // OXXO / Paycash / etc.
+            $payer['first_name'] = $request->input('payer.first_name');
+            $payer['last_name']  = $request->input('payer.last_name');
+
+            $paymentMethod = [
+                'id'   => $request->input('payment_method_id'),
+                'type' => 'ticket',
+            ];
+        } else {
+            // Tarjeta
+            $paymentMethod = [
+                'id'           => $request->input('payment_method_id'),
+                'type'         => $this->resolverTipoPaymentMethod($request->input('payment_method_id')),
+                'token'        => $request->input('token'),
+                'installments' => (int) $request->input('installments', 1),
+            ];
+
+            if ($request->filled('issuer_id')) {
+                $paymentMethod['issuer_id'] = $request->input('issuer_id');
+            }
+        }
+
+        $monto = (float) $request->input('transaction_amount');
+
+        $orderRequest = [
+            'type'               => 'online',
+            'processing_mode'    => 'automatic',
+            'total_amount'       => number_format($monto, 2, '.', ''),
+            'external_reference' => $pedido->numero,
+            'notification_url'   => route('pagos.webhook'),
+            'payer'              => $payer,
+            'transactions'       => [
+                'payments' => [
+                    [
+                        'amount'         => number_format($monto, 2, '.', ''),
+                        'payment_method' => $paymentMethod,
+                    ],
+                ],
+            ],
         ];
 
-        // Si es ticket (OXXO/Paycash), el Brick manda otra forma
-        if ($request->filled('payment_method_id') && !$request->filled('token')) {
-            $payerTicket = [
-                'email'      => $request->input('payer.email'),
-                'first_name' => $request->input('payer.first_name'),
-                'last_name'  => $request->input('payer.last_name'),
-            ];
-
-            if ($request->filled('payer.identification.type') && $request->filled('payer.identification.number')) {
-                $payerTicket['identification'] = [
-                    'type'   => $request->input('payer.identification.type'),
-                    'number' => $request->input('payer.identification.number'),
-                ];
-            }
-
-            $payload = [
-                'transaction_amount'  => (float) $request->input('transaction_amount'),
-                'payment_method_id'   => $request->input('payment_method_id'),
-                'description'         => 'Pedido ' . $pedido->numero,
-                'payer'               => $payerTicket,
-                'external_reference'  => $pedido->numero,
-                'notification_url'    => route('pagos.webhook'),
-            ];
+        if ($esTicket) {
+            $orderRequest['payment_expiration_time'] = 'P3D';
         }
 
         try {
-            $client  = new PaymentClient();
-            $payment = $client->create($payload);
+            $client = new OrderClient();
 
-            $estadoPago = match($payment->status) {
-                'approved' => 'aprobado',
-                'rejected' => 'rechazado',
-                default    => 'pendiente',
-            };
+            $requestOptions = new RequestOptions();
+            $requestOptions->setCustomHeaders(['X-Idempotency-Key: ' . (string) Str::uuid()]);
 
-            $datosPago = [
-                'metodo'        => $formData['payment_method_id'] ?? session('metodo_pago'),
-                'mp_payment_id' => $payment->id,
-                'mp_status'     => $payment->status,
-                'estado'        => $estadoPago,
-                'datos_mp'      => (array) $payment,
-            ];
+            $order = $client->create($orderRequest, $requestOptions);
 
-            $pago = $pedido->pagos()->latest()->first();
-            $pago
-                ? $pago->update($datosPago)
-                : Pago::create(array_merge(['id_pedido' => $pedido->id, 'monto' => $pedido->total], $datosPago));
+            $datosPago = $this->guardarPagoDesdeOrder($pedido, $order);
 
-            if ($estadoPago === 'aprobado') {
-                $pedido->update(['estado' => 'pagado']);
-                $pedido->carrito?->items()->delete();
-                session()->forget(['pedido_numero', 'metodo_pago']);
+            $pagoTicket = null;
+            if ($esTicket) {
+                $pagoTicket = $order->transactions->payments[0]->payment_method ?? null;
             }
 
             return response()->json([
                 'ok'            => true,
-                'id'            => $payment->id,
-                'status'        => $payment->status,
-                'status_detail' => $payment->status_detail,
-                'redirect'      => $estadoPago === 'aprobado' ? route('checkout.confirmacion', $pedido->numero) : null,
+                'id'            => $order->id,
+                'status'        => $order->status,
+                'status_detail' => $order->status_detail ?? null,
+                'ticket'        => $pagoTicket ? [
+                    'ticket_url'        => $pagoTicket->ticket_url ?? null,
+                    'barcode_content'   => $pagoTicket->barcode_content ?? null,
+                    'reference'         => $pagoTicket->reference ?? null,
+                    'verification_code' => $pagoTicket->verification_code ?? null,
+                ] : null,
+                'redirect'      => $datosPago['estado'] === 'aprobado'
+                    ? route('checkout.confirmacion', $pedido->numero)
+                    : null,
             ]);
 
         } catch (\MercadoPago\Exceptions\MPApiException $e) {
@@ -341,8 +339,23 @@ class PagoController extends Controller
     {
         $numero = $request->external_reference ?? session('pedido_numero');
 
+        if ($numero) {
+            $pedido = Pedido::where('numero', $numero)->first();
+
+            if ($pedido) {
+                $pago = $pedido->pagos()->latest()->first();
+
+                if ($pago) {
+                    $pago->update([
+                        'estado'    => 'rechazado',
+                        'mp_status' => $request->collapse_status ?? $request->status ?? 'failed',
+                    ]);
+                }
+            }
+        }
+
         return redirect()->route('checkout.index')
-            ->with('error', 'El pago no pudo procesarse. Intenta de nuevo.');
+            ->with('error', 'El pago no pudo procesarse. Puedes intentar de nuevo o elegir otro método de pago.');
     }
 
     // ─── Pago pendiente ───────────────────────────
@@ -375,34 +388,65 @@ class PagoController extends Controller
 
         $tipo = $request->type ?? $request->input('topic');
 
-        if ($tipo !== 'payment') {
+        if ($tipo === 'order') {
+            $orderId = $request->input('data.id');
+
+            if (!$orderId) {
+                return response()->json(['ok' => false], 400);
+            }
+
+            try {
+                $client = new OrderClient();
+                $order  = $client->get($orderId);
+
+                $pedido = Pedido::where('numero', $order->external_reference)
+                    ->with('pagos')
+                    ->first();
+
+                if (!$pedido) {
+                    Log::warning('Pedido no encontrado en webhook (order)', ['numero' => $order->external_reference]);
+                    return response()->json(['ok' => false], 404);
+                }
+
+                $this->guardarPagoDesdeOrder($pedido, $order);
+
+            } catch (\Exception $e) {
+                Log::error('Error en webhook MP (order)', ['error' => $e->getMessage()]);
+                return response()->json(['ok' => false], 500);
+            }
+
             return response()->json(['ok' => true]);
         }
 
-        $paymentId = $request->data['id'] ?? $request->id;
+        if ($tipo === 'payment') {
+            // Notificaciones de Checkout Pro (crearPreferencia)
+            $paymentId = $request->input('data.id') ?? $request->input('id');
 
-        if (!$paymentId) {
-            return response()->json(['ok' => false], 400);
-        }
-
-        try {
-            $client  = new PaymentClient();
-            $payment = $client->get($paymentId);
-
-            $pedido = Pedido::where('numero', $payment->external_reference)
-                ->with('pagos')
-                ->first();
-
-            if (!$pedido) {
-                Log::warning('Pedido no encontrado en webhook', ['numero' => $payment->external_reference]);
-                return response()->json(['ok' => false], 404);
+            if (!$paymentId) {
+                return response()->json(['ok' => false], 400);
             }
 
-            $this->procesarPago($pedido, $paymentId, $payment);
+            try {
+                $client      = new PaymentClient();
+                $paymentData = $client->get($paymentId);
 
-        } catch (\Exception $e) {
-            Log::error('Error en webhook MP', ['error' => $e->getMessage()]);
-            return response()->json(['ok' => false], 500);
+                $pedido = Pedido::where('numero', $paymentData->external_reference)
+                    ->with('pagos')
+                    ->first();
+
+                if (!$pedido) {
+                    Log::warning('Pedido no encontrado en webhook (payment)', ['numero' => $paymentData->external_reference]);
+                    return response()->json(['ok' => false], 404);
+                }
+
+                $this->procesarPago($pedido, $paymentId, $paymentData);
+
+            } catch (\Exception $e) {
+                Log::error('Error en webhook MP (payment)', ['error' => $e->getMessage()]);
+                return response()->json(['ok' => false], 500);
+            }
+
+            return response()->json(['ok' => true]);
         }
 
         return response()->json(['ok' => true]);
@@ -438,8 +482,20 @@ class PagoController extends Controller
             }
 
             // Actualizar estado del pedido
-            if ($estadoPago === 'aprobado' && $pedido->estado === 'pendiente') {
+            if ($estadoPago === 'aprobado' && $pedido->estado !== 'pagado') {
+                $yaEstabaPagado = $pedido->estado === 'pagado';
                 $pedido->update(['estado' => 'pagado']);
+                $pedido->carrito?->items()->delete();
+
+                if (!$yaEstabaPagado) {
+                    $pedido->load('items', 'zona');
+
+                    \Illuminate\Support\Facades\Mail::to($pedido->email)
+                        ->send(new \App\Mail\PedidoConfirmacion($pedido));
+
+                    \Illuminate\Support\Facades\Mail::to(config('mail.admin'))
+                        ->send(new \App\Mail\AdminNuevoPedido($pedido));
+                }
             } elseif ($estadoPago === 'rechazado') {
                 $pedido->update(['estado' => 'cancelado']);
             }
@@ -448,4 +504,61 @@ class PagoController extends Controller
             Log::error('Error al procesar pago', ['error' => $e->getMessage(), 'payment_id' => $paymentId]);
         }
     }
+
+    private function resolverTipoPaymentMethod(string $paymentMethodId): string
+    {
+        return Cache::remember("mp_payment_method_type_{$paymentMethodId}", now()->addDay(), function () use ($paymentMethodId) {
+            $response = Http::withToken(config('services.mercadopago.access_token'))
+                ->get('https://api.mercadopago.com/v1/payment_methods');
+
+            $metodo = collect($response->json())->firstWhere('id', $paymentMethodId);
+
+            return $metodo['payment_type_id'] ?? 'credit_card';
+        });
+    }
+
+    private function guardarPagoDesdeOrder(Pedido $pedido, $order): array
+    {
+        $estadoPago = match($order->status) {
+            'processed'            => 'aprobado',
+            'failed', 'canceled'   => 'rechazado',
+            'refunded'             => 'reembolsado',
+            default                => 'pendiente', // created, action_required, processing, expired
+        };
+
+        $pagoTransaccion = $order->transactions->payments[0] ?? null;
+
+        $datosPago = [
+            'metodo'        => $pagoTransaccion->payment_method->id ?? null,
+            'mp_payment_id' => $order->id,
+            'mp_status'     => $order->status,
+            'estado'        => $estadoPago,
+            'datos_mp'      => (array) $order,
+        ];
+
+        $pago = $pedido->pagos()->latest()->first();
+        $pago
+            ? $pago->update($datosPago)
+            : Pago::create(array_merge(['id_pedido' => $pedido->id, 'monto' => $pedido->total], $datosPago));
+
+        if ($estadoPago === 'aprobado') {
+        $pedido->update(['estado' => 'pagado']);
+        $pedido->carrito?->items()->delete();
+        session()->forget(['pedido_numero', 'metodo_pago']);
+
+        // Solo notificamos la primera vez que se confirma el pago,
+        // no en cada webhook subsecuente para el mismo pedido.
+        if (is_null($pedido->getOriginal('estado')) || $pedido->getOriginal('estado') !== 'pagado') {
+            $pedido->load('items', 'zona');
+
+            \Illuminate\Support\Facades\Mail::to($pedido->email)
+                ->send(new \App\Mail\PedidoConfirmacion($pedido));
+
+            \Illuminate\Support\Facades\Mail::to(config('mail.admin'))
+                ->send(new \App\Mail\AdminNuevoPedido($pedido));
+        }
+    }
+
+    return $datosPago;
+}
 }

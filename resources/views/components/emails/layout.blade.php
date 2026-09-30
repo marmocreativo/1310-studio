@@ -203,9 +203,22 @@
 
         {{-- Footer --}}
         <div class="footer">
-            <p>1310 Studio · Luxury Flower Lab</p>
-            <p>Orizaba 78, Roma Norte, Cuauhtémoc, CDMX 06700</p>
-            <p>Lun–Vie 9:00–19:00 · Sáb 9:00–15:00</p>
+            <p>{{ config('app.name') }} · Luxury Flower Lab</p>
+            <p>{!! nl2br(e($conf['direccion_contacto'] ?? '')) !!}</p>
+            <p>{!! nl2br(e($conf['horario_contacto'] ?? '')) !!}</p>
+            @if(!empty($conf['whatsapp_contacto']) || !empty($conf['email_contacto']))
+                <p style="margin-top: 12px;">
+                    @if(!empty($conf['whatsapp_contacto']))
+                        {{ $conf['whatsapp_contacto'] }}
+                    @endif
+                    @if(!empty($conf['whatsapp_contacto']) && !empty($conf['email_contacto']))
+                        &nbsp;·&nbsp;
+                    @endif
+                    @if(!empty($conf['email_contacto']))
+                        <a href="mailto:{{ $conf['email_contacto'] }}">{{ $conf['email_contacto'] }}</a>
+                    @endif
+                </p>
+            @endif
             <p style="margin-top: 12px;">
                 <a href="{{ url('/') }}">{{ url('/') }}</a>
             </p>

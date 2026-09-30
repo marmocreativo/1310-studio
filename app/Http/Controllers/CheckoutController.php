@@ -357,18 +357,18 @@ class CheckoutController extends Controller
             // Cargar relaciones necesarias para el correo
             $pedido->load('items', 'zona', 'pago');
 
-            // Correo al cliente
-            \Illuminate\Support\Facades\Mail::to($pedido->email)
-                ->send(new \App\Mail\PedidoConfirmacion($pedido));
-
-            // Correo al admin
-            \Illuminate\Support\Facades\Mail::to(config('mail.admin'))
-                ->send(new \App\Mail\AdminNuevoPedido($pedido));
-
             // Limpiar sesión de checkout
             session()->forget(['checkout', 'checkout_como_invitado']);
 
             if (in_array($request->metodo_pago, ['contra_entrega', 'transferencia'])) {
+                // Estos métodos NO pasan por Mercado Pago en este momento —
+                // el pedido queda válidamente registrado ya, así que sí notificamos de inmediato.
+                \Illuminate\Support\Facades\Mail::to($pedido->email)
+                    ->send(new \App\Mail\PedidoConfirmacion($pedido));
+
+                \Illuminate\Support\Facades\Mail::to(config('mail.admin'))
+                    ->send(new \App\Mail\AdminNuevoPedido($pedido));
+
                 \App\Models\Pago::create([
                     'id_pedido' => $pedido->id,
                     'metodo'    => $request->metodo_pago,
@@ -377,7 +377,6 @@ class CheckoutController extends Controller
                 ]);
 
                 $carrito->items()->delete();
-
                 return redirect()->route('checkout.confirmacion', $pedido->numero);
             }
 
