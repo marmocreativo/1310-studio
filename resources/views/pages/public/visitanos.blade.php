@@ -232,7 +232,7 @@
     ════════════════════════════════════════════ --}}
     <div class="w-full h-[500px]">
         <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3763.2!2d-99.1611!3d19.4195!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85d1ff1c1cd2cc19%3A0x5d8fe30f5a4c8e75!2sOrizaba%2078%2C%20Roma%20Nte.%2C%20Cuauht%C3%A9moc%2C%2006700%20Ciudad%20de%20M%C3%A9xico%2C%20CDMX!5e0!3m2!1ses!2smx!4v1"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3762.7892636774072!2d-99.16733110000001!3d19.4215092!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85d1fff10ca2fdbb%3A0xfc916f1c16dd80cf!2s1310%20STUDIO%20LUXURY%20FLOWER%20LAB!5e0!3m2!1ses!2smx!4v1791397512264!5m2!1ses!2smx"
             width="100%"
             height="100%"
             style="border:0; display:block;"
